@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "framework_id": "F02",
+  "transcript_revision": 1,
+  "status": "ready",
+  "rewrite_text": "I walked into the wrong café. For a second, my whole plan was to look like I’d meant to be there. Ever done that?",
+  "preserved_facts": [
+    {
+      "input_quote": "I walked into the wrong café.",
+      "rewrite_quote": "I walked into the wrong café."
+    },
+    {
+      "input_quote": "I was trying to look like I’d planned it.",
+      "rewrite_quote": "my whole plan was to look like I’d meant to be there."
+    }
+  ],
+  "changes": [
+    {
+      "criterion_id": "response_opening",
+      "description": "Added a brief invitation for the listener to respond."
+    }
+  ],
+  "new_hypothetical": null,
+  "question_for_user": null
+}

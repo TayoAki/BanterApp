@@ -1,0 +1,692 @@
+[
+  {
+    "id": "F01-P01",
+    "framework_id": "F01",
+    "level": 1,
+    "kind": "personal_reflection",
+    "prompt": "Talk about a small win this week. Include what you were thinking or feeling and one concrete detail.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "inner_view",
+      "expression",
+      "specificity"
+    ],
+    "example_ids": [
+      "E01-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F01-P02",
+    "framework_id": "F01",
+    "level": 2,
+    "kind": "personal_reflection",
+    "prompt": "Describe something you are proud of without selling yourself. Share the human reaction and one concrete detail.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "inner_view",
+      "expression",
+      "specificity"
+    ],
+    "example_ids": [
+      "E01-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F01-P03",
+    "framework_id": "F01",
+    "level": 3,
+    "kind": "personal_reflection",
+    "prompt": "Someone asks how work is going. Tell a truthful moment that shows your perspective rather than your status. Include one concrete detail.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "inner_view",
+      "expression",
+      "specificity"
+    ],
+    "example_ids": [
+      "E01-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F02-P01",
+    "framework_id": "F02",
+    "level": 1,
+    "kind": "personal_reflection",
+    "prompt": "Talk about a tiny mishap from today. Share what went through your mind, then give the listener an easy way to respond.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "ordinary_moment",
+      "personal_reaction",
+      "response_opening"
+    ],
+    "example_ids": [
+      "E02-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F02-P02",
+    "framework_id": "F02",
+    "level": 2,
+    "kind": "personal_reflection",
+    "prompt": "Make waiting in a queue worth talking about. Use a real small moment, your reaction, and a light invitation to respond.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "ordinary_moment",
+      "personal_reaction",
+      "response_opening"
+    ],
+    "example_ids": [
+      "E02-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F02-P03",
+    "framework_id": "F02",
+    "level": 3,
+    "kind": "personal_reflection",
+    "prompt": "Someone asks what you did this morning. Use one ordinary event to reveal your personality and leave room for their reply.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "ordinary_moment",
+      "personal_reaction",
+      "response_opening"
+    ],
+    "example_ids": [
+      "E02-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F05-P01",
+    "framework_id": "F05",
+    "level": 1,
+    "kind": "personal_reflection",
+    "prompt": "Why did you choose a hobby? Answer with one truthful moment and what you were thinking, not a list of reasons.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "anecdote",
+      "thought_feeling",
+      "relevance"
+    ],
+    "example_ids": [
+      "E05-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F05-P02",
+    "framework_id": "F05",
+    "level": 2,
+    "kind": "personal_reflection",
+    "prompt": "Explain a food you love through a small real memory. Include your reaction and connect it to your preference.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "anecdote",
+      "thought_feeling",
+      "relevance"
+    ],
+    "example_ids": [
+      "E05-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F05-P03",
+    "framework_id": "F05",
+    "level": 3,
+    "kind": "personal_reflection",
+    "prompt": "Someone asks why you chose your work or studies. Tell a short truthful anecdote that makes your reason clear.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "anecdote",
+      "thought_feeling",
+      "relevance"
+    ],
+    "example_ids": [
+      "E05-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F06-P01",
+    "framework_id": "F06",
+    "level": 1,
+    "kind": "personal_reflection",
+    "prompt": "Describe a small act of kindness you witnessed. Show the scene, what happened, and the reaction without inventing details.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "scene",
+      "action",
+      "movement"
+    ],
+    "example_ids": [
+      "E06-01",
+      "E06-02",
+      "E06-03",
+      "E06-04"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F06-P02",
+    "framework_id": "F06",
+    "level": 2,
+    "kind": "personal_reflection",
+    "prompt": "Describe making a meal or fixing something. Use actions and a change in the scene rather than listing qualities.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "scene",
+      "action",
+      "movement"
+    ],
+    "example_ids": [
+      "E06-01",
+      "E06-02",
+      "E06-03",
+      "E06-04"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F06-P03",
+    "framework_id": "F06",
+    "level": 3,
+    "kind": "personal_reflection",
+    "prompt": "Someone asks what your hobby is like. Describe a real moment in motion, with an action and a reaction.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "scene",
+      "action",
+      "movement"
+    ],
+    "example_ids": [
+      "E06-01",
+      "E06-02",
+      "E06-03",
+      "E06-04"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F03-P01",
+    "framework_id": "F03",
+    "level": 1,
+    "kind": "fictional_roleplay",
+    "prompt": "Fictional practice: you both enjoy terrible karaoke. Offer a playful shared scene using something about you and something about them.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "self",
+      "listener",
+      "shared"
+    ],
+    "example_ids": [
+      "E03-01",
+      "E03-02",
+      "E03-03",
+      "E03-04",
+      "E03-05",
+      "E03-06"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F03-P02",
+    "framework_id": "F03",
+    "level": 2,
+    "kind": "fictional_roleplay",
+    "prompt": "Fictional practice: a friend says they love unusual cafés. Connect your curiosity to theirs and imagine a small outing together.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "self",
+      "listener",
+      "shared"
+    ],
+    "example_ids": [
+      "E03-01",
+      "E03-02",
+      "E03-03",
+      "E03-04",
+      "E03-05",
+      "E03-06"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F03-P03",
+    "framework_id": "F03",
+    "level": 3,
+    "kind": "fictional_roleplay",
+    "prompt": "Fictional practice: the other person says they are hopeless at board games and laughs. Include yourself in a light shared scenario and leave them a choice.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "self",
+      "listener",
+      "shared"
+    ],
+    "example_ids": [
+      "E03-01",
+      "E03-02",
+      "E03-03",
+      "E03-04",
+      "E03-05",
+      "E03-06"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F10-P01",
+    "framework_id": "F10",
+    "level": 1,
+    "kind": "personal_reflection",
+    "prompt": "Say something you would genuinely like to learn, paint a playful picture of it, then ask the listener what they would like to try.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "own_answer",
+      "picture",
+      "question"
+    ],
+    "example_ids": [
+      "E10-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F10-P02",
+    "framework_id": "F10",
+    "level": 2,
+    "kind": "personal_reflection",
+    "prompt": "Share your idea of a surprisingly good weekend with one image or feeling, then invite the other person’s answer.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "own_answer",
+      "picture",
+      "question"
+    ],
+    "example_ids": [
+      "E10-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F10-P03",
+    "framework_id": "F10",
+    "level": 3,
+    "kind": "personal_reflection",
+    "prompt": "Ask someone about a small ambition. First offer your own truthful answer in a way that gives them something to build on.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "own_answer",
+      "picture",
+      "question"
+    ],
+    "example_ids": [
+      "E10-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F08-P01",
+    "framework_id": "F08",
+    "level": 1,
+    "kind": "personal_reflection",
+    "prompt": "Talk about a harmless thing you are not very good at. Own it without putting yourself down or asking for reassurance.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "honesty",
+      "ownership",
+      "proportion"
+    ],
+    "example_ids": [
+      "E08-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F08-P02",
+    "framework_id": "F08",
+    "level": 2,
+    "kind": "personal_reflection",
+    "prompt": "Share an interest you used to feel uncool admitting. Explain honestly why you like it without apologizing for yourself.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "honesty",
+      "ownership",
+      "proportion"
+    ],
+    "example_ids": [
+      "E08-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F08-P03",
+    "framework_id": "F08",
+    "level": 3,
+    "kind": "personal_reflection",
+    "prompt": "Describe a mildly awkward moment and your real reaction. Keep it proportionate and avoid turning it into a list of faults.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "honesty",
+      "ownership",
+      "proportion"
+    ],
+    "example_ids": [
+      "E08-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F07-P01",
+    "framework_id": "F07",
+    "level": 1,
+    "kind": "personal_reflection",
+    "prompt": "Tell a real story by starting at its most interesting moment. Give only the context needed to follow it.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "entry",
+      "context",
+      "thread"
+    ],
+    "example_ids": [
+      "E07-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F07-P02",
+    "framework_id": "F07",
+    "level": 2,
+    "kind": "personal_reflection",
+    "prompt": "Describe a small surprise from your day. Skip the long setup and leave a clear thread for the listener.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "entry",
+      "context",
+      "thread"
+    ],
+    "example_ids": [
+      "E07-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F07-P03",
+    "framework_id": "F07",
+    "level": 3,
+    "kind": "fictional_roleplay",
+    "prompt": "Fictional practice: you arrive at a café to meet a friend. Open with an interesting moment from your day, then supply just enough context.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "entry",
+      "context",
+      "thread"
+    ],
+    "example_ids": [
+      "E07-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F11-P01",
+    "framework_id": "F11",
+    "level": 1,
+    "kind": "personal_reflection",
+    "prompt": "Offer an unexpectedly specific food preference and explain it just enough for someone to respond.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "unexpected",
+      "personal",
+      "usable"
+    ],
+    "example_ids": [
+      "E11-01",
+      "E11-02",
+      "E11-03"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F11-P02",
+    "framework_id": "F11",
+    "level": 2,
+    "kind": "personal_reflection",
+    "prompt": "Share a harmless odd enthusiasm you have. Make a statement that reveals you rather than asking another interview question.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "unexpected",
+      "personal",
+      "usable"
+    ],
+    "example_ids": [
+      "E11-01",
+      "E11-02",
+      "E11-03"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F11-P03",
+    "framework_id": "F11",
+    "level": 3,
+    "kind": "fictional_roleplay",
+    "prompt": "Fictional practice: the conversation has become a list of factual questions. Introduce a surprising personal preference that opens a new thread.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "unexpected",
+      "personal",
+      "usable"
+    ],
+    "example_ids": [
+      "E11-01",
+      "E11-02",
+      "E11-03"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F12-P01",
+    "framework_id": "F12",
+    "level": 1,
+    "kind": "personal_reflection",
+    "prompt": "Someone asks how your weekend was. Give one extra truthful detail about how a moment felt, then leave room for a response.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "initiative",
+      "extra_detail",
+      "opening"
+    ],
+    "example_ids": [
+      "E12-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F12-P02",
+    "framework_id": "F12",
+    "level": 2,
+    "kind": "personal_reflection",
+    "prompt": "Share a small personal preference before asking for theirs. Offer an approachable thread without expecting them to open up equally.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "initiative",
+      "extra_detail",
+      "opening"
+    ],
+    "example_ids": [
+      "E12-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  },
+  {
+    "id": "F12-P03",
+    "framework_id": "F12",
+    "level": 3,
+    "kind": "fictional_roleplay",
+    "prompt": "Fictional practice: a new acquaintance gives a short reply. Offer a small personal thread; if they remain uninterested, let the conversation end.",
+    "target_seconds": {
+      "min": 30,
+      "max": 60
+    },
+    "hard_limit_seconds": 90,
+    "criterion_ids": [
+      "initiative",
+      "extra_detail",
+      "opening"
+    ],
+    "example_ids": [
+      "E12-01"
+    ],
+    "publication_status": "draft",
+    "version": 1
+  }
+]

@@ -1,0 +1,26 @@
+{
+  "name": "marshmemos",
+  "private": true,
+  "version": "0.1.0",
+  "description": "marshmemos: adult English banter practice. Daily speaking prompt, transcript confirmation, strict framework feedback, fact-preserving rewrite, AI-voice playback, retry.",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "test:db": "pnpm --filter @marshmemos/server test:db",
+    "lint": "pnpm -r --if-present lint",
+    "content:validate": "pnpm --filter @marshmemos/content validate",
+    "server:api": "pnpm --filter @marshmemos/server dev:api",
+    "server:worker": "pnpm --filter @marshmemos/server dev:worker",
+    "mobile": "pnpm --filter @marshmemos/mobile start"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.1",
+    "tsx": "^4.23.13",
+    "@types/node": "^22.19.0"
+  }
+}

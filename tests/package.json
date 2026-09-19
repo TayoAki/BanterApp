@@ -1,0 +1,20 @@
+{
+  "name": "@marshmemos/tests",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@marshmemos/contracts": "workspace:*",
+    "@marshmemos/content": "workspace:*",
+    "@marshmemos/server": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "tsx": "^4.23.13",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.1"
+  }
+}

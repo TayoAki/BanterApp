@@ -1,0 +1,746 @@
+[
+  {
+    "id": "F01",
+    "order": 1,
+    "app_title": "Express yourself",
+    "source_title": "Expressing vs Impressing",
+    "source_file": "on-framework-1.pdf",
+    "source_pages": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "source_statement_verbatim": "Learn to think out loud in front of a girl to give a glimpse of your personality.",
+    "source_statement_page": 1,
+    "objective": "Reveal your thoughts and feelings rather than using achievements as status claims.",
+    "example_ids": [
+      "E01-01"
+    ],
+    "primary_example_id": "E01-01",
+    "rubric_version": "1.0",
+    "criteria": [
+      {
+        "id": "inner_view",
+        "label": "Inner viewpoint",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Reveal a thought, observation, opinion, or feeling instead of only status facts.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "expression",
+        "label": "Expression over impressing",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Show a human reaction; achievements are context, not proof of superiority.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "specificity",
+        "label": "One specific detail",
+        "origin": "exercise_rule",
+        "source_pages": [],
+        "definition": "Use one concrete detail in this exercise so the listener can picture the moment.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      }
+    ]
+  },
+  {
+    "id": "F02",
+    "order": 2,
+    "app_title": "Make it personal",
+    "source_title": "Its Not What You Talk About, Its How You Talk About It",
+    "source_file": "on-framework-2.pdf",
+    "source_pages": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "source_statement_verbatim": "Don’t worry about finding interesting things to talk about. Just make whatever you’re talking about fun and interesting. Take the pressure of yourself to have the perfect thing to talk about.",
+    "source_statement_page": 1,
+    "objective": "Make an ordinary event interesting through a specific inner reaction.",
+    "example_ids": [
+      "E02-01"
+    ],
+    "primary_example_id": "E02-01",
+    "rubric_version": "1.0",
+    "criteria": [
+      {
+        "id": "ordinary_moment",
+        "label": "Ordinary moment",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Use a mundane event as the conversational topic.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "personal_reaction",
+        "label": "Personal reaction",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Reveal your inner thought or feeling so the listener gets a glimpse of you.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "response_opening",
+        "label": "Room to respond",
+        "origin": "example_derived",
+        "source_pages": [
+          3
+        ],
+        "definition": "For this exercise, end with a light invitation like the source example; a question is not mandatory in every conversation.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      }
+    ]
+  },
+  {
+    "id": "F05",
+    "order": 3,
+    "app_title": "Tell a tiny story",
+    "source_title": "Its All About Anecdotes",
+    "source_file": "on-framework-5.pdf",
+    "source_pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "source_statement_verbatim": "Anecdotes Are What You Use to Express Yourself and Get Your Personality Across",
+    "source_statement_page": 1,
+    "objective": "Answer a factual question with a short incident that reveals your perspective.",
+    "example_ids": [
+      "E05-01"
+    ],
+    "primary_example_id": "E05-01",
+    "rubric_version": "1.0",
+    "criteria": [
+      {
+        "id": "anecdote",
+        "label": "A small incident",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Use a specific incident instead of a list of factual reasons.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "thought_feeling",
+        "label": "Thought or feeling",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Reveal what was going through your mind as it happened.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "relevance",
+        "label": "A point that connects",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Use the anecdote to illustrate the point or answer the question asked.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      }
+    ]
+  },
+  {
+    "id": "F06",
+    "order": 4,
+    "app_title": "Put it in motion",
+    "source_title": "Talk IN Action",
+    "source_file": "on-formula-6.pdf",
+    "source_pages": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "source_statement_verbatim": "Use a conversation to paint a scene, and action drives a scene (and a conversation) forward, allowing you to gain some momentum.",
+    "source_statement_page": 1,
+    "objective": "Use concrete actions and a change in the scene so the listener can picture it.",
+    "example_ids": [
+      "E06-01",
+      "E06-02",
+      "E06-03",
+      "E06-04"
+    ],
+    "primary_example_id": "E06-02",
+    "rubric_version": "1.0",
+    "criteria": [
+      {
+        "id": "scene",
+        "label": "A visible scene",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Let the listener picture where the moment is happening with enough concrete context.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "action",
+        "label": "Actions rather than labels",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Describe what people actually do, not only abstract personality or interest labels.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "movement",
+        "label": "A scene that moves",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Let one action lead to a reaction or change, moving the scene forward.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      }
+    ]
+  },
+  {
+    "id": "F03",
+    "order": 5,
+    "app_title": "Create a shared moment",
+    "source_title": "Co-Create the Moment",
+    "source_file": "on-framework-3.pdf",
+    "source_pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "source_statement_verbatim": "The magic point in a conversation where you’re completely ON happens when the conversation spotlight is brightly shining on both YOU and HER",
+    "source_statement_page": 1,
+    "objective": "Connect your observation to the other person and offer a shared imagined moment.",
+    "example_ids": [
+      "E03-01",
+      "E03-02",
+      "E03-03",
+      "E03-04",
+      "E03-05",
+      "E03-06"
+    ],
+    "primary_example_id": "E03-04",
+    "rubric_version": "1.0",
+    "criteria": [
+      {
+        "id": "self",
+        "label": "Include yourself",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Include your own observation, experience, or role.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "listener",
+        "label": "Relate it to them",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Connect the subject to information actually given about the listener.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "shared",
+        "label": "Offer a shared frame",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Offer an I/you/we moment that both can participate in; do not assume agreement.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      }
+    ]
+  },
+  {
+    "id": "F10",
+    "order": 6,
+    "app_title": "Share, then ask",
+    "source_title": "Telegraph Your Punches",
+    "source_file": "on-framework-10.pdf",
+    "source_pages": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "source_statement_verbatim": "When You Answer Your Own Question From Your Own Point of View Before Asking It, It Allows Her to Feel More Comfortable Sharing and Expressing.",
+    "source_statement_page": 1,
+    "objective": "Share your own answer before inviting the other person to answer.",
+    "example_ids": [
+      "E10-01"
+    ],
+    "primary_example_id": "E10-01",
+    "rubric_version": "1.0",
+    "criteria": [
+      {
+        "id": "own_answer",
+        "label": "Your answer first",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Share your own answer before inviting theirs.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "picture",
+        "label": "A personal picture",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Give a visual or emotional glimpse that makes the question easy to understand.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "question",
+        "label": "A connected invitation",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Ask a related question that the other person can answer freely.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      }
+    ]
+  },
+  {
+    "id": "F08",
+    "order": 7,
+    "app_title": "Be comfortably real",
+    "source_title": "Speak Your Vulnerability",
+    "source_file": "on-formula-8.pdf",
+    "source_pages": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "source_statement_verbatim": "Being On Means Being Real, Being Yourself, and to Express Your Humanity. In order to do this, you must speak your vulnerabilities instead of hiding from them.",
+    "source_statement_page": 1,
+    "objective": "Share an honest imperfection comfortably without demanding reassurance.",
+    "example_ids": [
+      "E08-01"
+    ],
+    "primary_example_id": "E08-01",
+    "rubric_version": "1.0",
+    "criteria": [
+      {
+        "id": "honesty",
+        "label": "An honest imperfection",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Share a genuine feeling, interest, or small imperfection.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "ownership",
+        "label": "Own your experience",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Speak from your perspective without blame or a demand for reassurance.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "proportion",
+        "label": "Proportionate disclosure",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Avoid repeated self-insults or complaining; keep the disclosure comfortable for the context.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      }
+    ]
+  },
+  {
+    "id": "F07",
+    "order": 8,
+    "app_title": "Start at the good bit",
+    "source_title": "Hit the Fast Forward Button",
+    "source_file": "on-framework-7.pdf",
+    "source_pages": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "source_statement_verbatim": "Get in the habit of skipping over the boring parts of conversation and jump right into the “fun” and emotional realms.",
+    "source_statement_page": 1,
+    "objective": "Start at an engaging moment and add only the context needed to understand it.",
+    "example_ids": [
+      "E07-01"
+    ],
+    "primary_example_id": "E07-01",
+    "rubric_version": "1.0",
+    "criteria": [
+      {
+        "id": "entry",
+        "label": "An engaging entry",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Begin near the interesting or emotional part rather than a long chronological introduction.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "context",
+        "label": "Only needed context",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Give enough context to understand without front-loading your whole backstory.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "thread",
+        "label": "A usable thread",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Introduce a story, opinion, or moment the listener can engage with.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      }
+    ]
+  },
+  {
+    "id": "F11",
+    "order": 9,
+    "app_title": "Take a playful turn",
+    "source_title": "Get Illogical",
+    "source_file": "on-framework-11.pdf",
+    "source_pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "source_statement_verbatim": "Make random statements that may seem out of place or illogical to a conversation, yet Expresses Your Personality, Opinions, and Interests",
+    "source_statement_page": 1,
+    "objective": "Offer an unexpected personal observation that creates a new conversational thread.",
+    "example_ids": [
+      "E11-01",
+      "E11-02",
+      "E11-03"
+    ],
+    "primary_example_id": "E11-03",
+    "rubric_version": "1.0",
+    "criteria": [
+      {
+        "id": "unexpected",
+        "label": "An unexpected statement",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Open a fresh conversational thread with an unexpected statement rather than staying in an interview pattern.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "personal",
+        "label": "Your actual preference",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Reveal an opinion, interest, or personality detail rather than random words.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "usable",
+        "label": "A usable new thread",
+        "origin": "exercise_rule",
+        "source_pages": [],
+        "definition": "For this exercise, make the statement understandable enough for another person to respond.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      }
+    ]
+  },
+  {
+    "id": "F12",
+    "order": 10,
+    "app_title": "Give them something to meet",
+    "source_title": "The More You Give The More You Get",
+    "source_file": "on-framework-12.pdf",
+    "source_pages": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "source_statement_verbatim": "If you want to get a woman opening up and making the conversation come more easily, you must first open up to her, and give more than you’re getting.",
+    "source_statement_page": 1,
+    "objective": "Give a little personal context first so the other person has something to respond to.",
+    "example_ids": [
+      "E12-01"
+    ],
+    "primary_example_id": "E12-01",
+    "rubric_version": "1.0",
+    "criteria": [
+      {
+        "id": "initiative",
+        "label": "Offer something first",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Introduce a personal thread rather than waiting for the other person to do all the work.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "extra_detail",
+        "label": "A little more of you",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Give a glimpse of a thought or feeling beyond the minimum factual reply.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      },
+      {
+        "id": "opening",
+        "label": "Something to respond to",
+        "origin": "source_rule",
+        "source_pages": [
+          1,
+          2,
+          3
+        ],
+        "definition": "Leave material they can relate to without requiring equal intimacy or disclosure.",
+        "anchors": {
+          "0": "Absent or clearly contrary to the criterion.",
+          "1": "An attempt is visible but weak, vague, or incomplete.",
+          "2": "Clearly meets the criterion.",
+          "3": "Clearly meets the criterion with specific, well-fitted execution."
+        }
+      }
+    ]
+  }
+]

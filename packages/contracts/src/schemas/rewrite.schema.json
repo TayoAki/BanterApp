@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": "1.0",
+      "type": "string"
+    },
+    "framework_id": {
+      "type": "string",
+      "enum": [
+        "F01",
+        "F02",
+        "F05",
+        "F06",
+        "F03",
+        "F10",
+        "F08",
+        "F07",
+        "F11",
+        "F12"
+      ]
+    },
+    "transcript_revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ready",
+        "needs_detail",
+        "unavailable"
+      ]
+    },
+    "rewrite_text": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 1600
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "preserved_facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "input_quote": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "rewrite_quote": {
+            "type": "string",
+            "maxLength": 250
+          }
+        },
+        "required": [
+          "input_quote",
+          "rewrite_quote"
+        ]
+      },
+      "minItems": 0,
+      "maxItems": 8
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "criterion_id": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 260
+          }
+        },
+        "required": [
+          "criterion_id",
+          "description"
+        ]
+      },
+      "minItems": 0,
+      "maxItems": 3
+    },
+    "new_hypothetical": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 250
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "question_for_user": {
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 250
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schema_version",
+    "framework_id",
+    "transcript_revision",
+    "status",
+    "rewrite_text",
+    "preserved_facts",
+    "changes",
+    "new_hypothetical",
+    "question_for_user"
+  ]
+}

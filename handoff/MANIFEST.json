@@ -1,0 +1,221 @@
+{
+  "package": "marshmemos-build-handoff",
+  "created": "2026-09-19",
+  "files": [
+    {
+      "path": "CLAUDE.md",
+      "bytes": 4352,
+      "sha256": "df0c5c9d4c6687a5cbcfc630350143459f4dc058530ef08a30bec73bbb527468"
+    },
+    {
+      "path": "PLAN.md",
+      "bytes": 4948,
+      "sha256": "4feb08637d5555b68fd030c8c043697b454152602c7ebfb1b8d66bd69873046a"
+    },
+    {
+      "path": "START-HERE.md",
+      "bytes": 4265,
+      "sha256": "0e946deb96905058b42d40caf592d473d5f40e8e4f8fd8a0f2e1baa1625b4012"
+    },
+    {
+      "path": "content/daily-prompts.json",
+      "bytes": 16122,
+      "sha256": "71aff8e5ca6c907c5961c3495234333fb0139094ccc018f2c5027d9c2de507e9"
+    },
+    {
+      "path": "content/frameworks.json",
+      "bytes": 24441,
+      "sha256": "bf062bac0bf53085cda22694d0431a012cbcb68d0075d8a714751833b5b519a4"
+    },
+    {
+      "path": "content/lessons.json",
+      "bytes": 15114,
+      "sha256": "f4820b17a181af6f1daec6262e2df89a6e3bf4487fe7ae1a032ec123cbb5295e"
+    },
+    {
+      "path": "content/source-corpus.json",
+      "bytes": 47301,
+      "sha256": "dbc72708ca3a072db0782316c33a23587e2a1d932d7173241ad8da1c89b626e7"
+    },
+    {
+      "path": "content/source-pdfs/on-formula-6.pdf",
+      "bytes": 47676,
+      "sha256": "aff4d6e0ce823d82a893dde758a23bb9efac90b49fe318b748275decc33f740f"
+    },
+    {
+      "path": "content/source-pdfs/on-formula-8.pdf",
+      "bytes": 50044,
+      "sha256": "d03ce3105e38c3e1a6d85c7ec7461874a0727303f9e19888e5c63fc9dceea3be"
+    },
+    {
+      "path": "content/source-pdfs/on-framework-1.pdf",
+      "bytes": 45034,
+      "sha256": "0f44b9e3b38c9abe6a9a9739b3dce4cba8a9fb14758d8c03c053efb4b13f12f4"
+    },
+    {
+      "path": "content/source-pdfs/on-framework-10.pdf",
+      "bytes": 48904,
+      "sha256": "a5a1bdceef4958f98f4a060053832825634015a698ed3aab667a3b7708b8883c"
+    },
+    {
+      "path": "content/source-pdfs/on-framework-11.pdf",
+      "bytes": 47259,
+      "sha256": "afe86bc2e619048ece1264cf5e6479f844b58b0f446dc2566ed4ba2541992535"
+    },
+    {
+      "path": "content/source-pdfs/on-framework-12.pdf",
+      "bytes": 49463,
+      "sha256": "ef7a14dfc436f11ccbd0247feb51f171ed52d3b1f90cfe1f304c77880b861312"
+    },
+    {
+      "path": "content/source-pdfs/on-framework-2.pdf",
+      "bytes": 46799,
+      "sha256": "3237acd75915bba057cf41ab003dcd0714f7ce59c917b88032bb0311d8781648"
+    },
+    {
+      "path": "content/source-pdfs/on-framework-3.pdf",
+      "bytes": 48137,
+      "sha256": "829fea65d56725dfac186729b517f50133fa88bb038c063c02d96b6887020dea"
+    },
+    {
+      "path": "content/source-pdfs/on-framework-5.pdf",
+      "bytes": 49704,
+      "sha256": "06ec3f8d9120c4a323ede3e8d3023d523e956a7d1dd5392ba558ba4561f9a85b"
+    },
+    {
+      "path": "content/source-pdfs/on-framework-7.pdf",
+      "bytes": 46047,
+      "sha256": "afeab0534ddbe575b0e2328ac743cec55cf9f96924ff49f47c38a141dfa142b4"
+    },
+    {
+      "path": "content/verbatim-examples.md",
+      "bytes": 8524,
+      "sha256": "9128adc134538fa51189d0ef3a902f91eb3e7c4a5f7cbde07fd0a77649079d1f"
+    },
+    {
+      "path": "contracts/evaluation.schema.json",
+      "bytes": 3212,
+      "sha256": "4126a29b132892eabab86b5cbd1be7542edaa60eacf862266a924a15c6fe9c90"
+    },
+    {
+      "path": "contracts/partner.schema.json",
+      "bytes": 587,
+      "sha256": "b9506f045ed6792ecdb36de3d85ef7efad0153184ab90cbf802b16f99e8096b0"
+    },
+    {
+      "path": "contracts/rewrite-verification.schema.json",
+      "bytes": 810,
+      "sha256": "30fef3b4086439fb346542f9462f6dc1bb000ce96f72b7cd84c24ae4a235c71e"
+    },
+    {
+      "path": "contracts/rewrite.schema.json",
+      "bytes": 2397,
+      "sha256": "8d9a85070165fed0813c3c9dab98ed7006e2fa165fe2100c08ef4a10c7032120"
+    },
+    {
+      "path": "design/01-voice-practice.png",
+      "bytes": 1384095,
+      "sha256": "934052f75831feecacf821f73ee6d5061844b0d87596228963aa0a7139b03af0"
+    },
+    {
+      "path": "design/02-feedback-progress.png",
+      "bytes": 1540764,
+      "sha256": "c75652548658a05f757e36e6be64605fc7fb6ae4c5bce53aac88b9eab262d779"
+    },
+    {
+      "path": "design/tokens.json",
+      "bytes": 647,
+      "sha256": "ee4479e1e95eb9c1da390d948adc09cb70d01c1b274e96fea6f5626fd17fb857"
+    },
+    {
+      "path": "docs/01-product.md",
+      "bytes": 7942,
+      "sha256": "c11ce48f1b4c30e02f2108a4fcb3c60c6556c9c85cedb4f160cc503f0257be29"
+    },
+    {
+      "path": "docs/02-framework-engine.md",
+      "bytes": 8866,
+      "sha256": "41152a5af798fca479904dc303c9258886f1a64b2d82f4f014c0d6ad8335f6b7"
+    },
+    {
+      "path": "docs/03-voice-and-jobs.md",
+      "bytes": 9386,
+      "sha256": "2cd336778263c15688814acbacfaa8eab3e1537e9d9d5aaeb8027b2d1415d8e6"
+    },
+    {
+      "path": "docs/04-data-and-api.md",
+      "bytes": 9955,
+      "sha256": "2ed00f02baae5828ae13bd9896e31f648fb43be6a7a53c52cfda1d93fcbb5993"
+    },
+    {
+      "path": "docs/05-design.md",
+      "bytes": 7333,
+      "sha256": "9c0602ad4e6050be619fc522c0e132ab83c98031c1b07b4f2f07f7ab6ea7707a"
+    },
+    {
+      "path": "docs/06-accounts-billing-operations.md",
+      "bytes": 6633,
+      "sha256": "803abf08c31a63fe8a4c5b277837ad1edd39978f026deedef1cf7cbff3085a22"
+    },
+    {
+      "path": "docs/07-verification.md",
+      "bytes": 6435,
+      "sha256": "d2c427b20dcdd72d067aee34ba3799f55eb560a46a18e62d408e287a1e4b0793"
+    },
+    {
+      "path": "docs/08-service-setup.md",
+      "bytes": 4720,
+      "sha256": "aafda5212343c0c5e819281c27c52115f0f7fb981e311fac970a3641e56e6193"
+    },
+    {
+      "path": "fixtures/attempt.json",
+      "bytes": 302,
+      "sha256": "6dfe76dbd9870572972a51ae3f95d00e9f8a8eb92db97219690a535ec21b56fe"
+    },
+    {
+      "path": "fixtures/evaluation.json",
+      "bytes": 1329,
+      "sha256": "936bf092a5f90904b76cf1d169bab3f3d145a052aaebe0003ba6bf7b85e2b154"
+    },
+    {
+      "path": "fixtures/rewrite.json",
+      "bytes": 763,
+      "sha256": "31d379ed539a180db425428fc658b1ca76f7d71a6be377bec65b7dcdacc929e0"
+    },
+    {
+      "path": "prompts/author-lesson.md",
+      "bytes": 1387,
+      "sha256": "e0d9147f501f8fc71b89764da159d4c1215e2c011abcdf499e4734c7257dd55e"
+    },
+    {
+      "path": "prompts/evaluate.md",
+      "bytes": 2810,
+      "sha256": "0dc7e92d870c8b3f75a997dd8d95cb6d0b446ce279e413290c78b8dd95f4ee7a"
+    },
+    {
+      "path": "prompts/rewrite.md",
+      "bytes": 1750,
+      "sha256": "e79c99aad55655d407d0b72318d7df51cdfca9830218eb65299aa2ec57e4aa2f"
+    },
+    {
+      "path": "prompts/roleplay.md",
+      "bytes": 1358,
+      "sha256": "84e1b6483f6c2493e2ba03c2015e471ecf158bbf26bc87e592b0e3d8cf5bc0a1"
+    },
+    {
+      "path": "prompts/verify-rewrite.md",
+      "bytes": 1174,
+      "sha256": "9e60ea845cee3d1d2f4f21c98cbe7f707642f35512ea43c375f8b8211d00bd5b"
+    },
+    {
+      "path": "scripts/validate_handoff.py",
+      "bytes": 6607,
+      "sha256": "05beb491012af5402665d53870a1f49357562be0142e82842b1973b0bdce6065"
+    },
+    {
+      "path": "verification/HANDOFF-CHECKS.md",
+      "bytes": 2122,
+      "sha256": "394ff40a226b6fd0fe3a6d93d80615e31b8ae4e068bc2cc2be698972f2b79bb9"
+    }
+  ]
+}

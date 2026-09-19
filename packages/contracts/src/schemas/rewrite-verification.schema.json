@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "revise",
+        "needs_detail"
+      ]
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "rewrite_span": {
+            "type": "string",
+            "maxLength": 250
+          },
+          "explanation": {
+            "type": "string",
+            "maxLength": 350
+          }
+        },
+        "required": [
+          "rewrite_span",
+          "explanation"
+        ]
+      },
+      "minItems": 0,
+      "maxItems": 8
+    }
+  },
+  "required": [
+    "verdict",
+    "issues"
+  ]
+}

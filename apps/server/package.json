@@ -1,0 +1,36 @@
+{
+  "name": "@marshmemos/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:api": "tsx watch src/entry/api.ts",
+    "dev:worker": "tsx watch src/entry/worker.ts",
+    "start:api": "node dist/api.js",
+    "start:worker": "node dist/worker.js",
+    "build": "tsx scripts/build.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --exclude '**/*.db.test.ts'",
+    "test:db": "vitest run --dir src --testNamePattern '.*' -c vitest.db.config.ts",
+    "migrate": "tsx src/db/migrate.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "@marshmemos/contracts": "workspace:*",
+    "@marshmemos/content": "workspace:*",
+    "@supabase/supabase-js": "^2.116.0",
+    "hono": "^4.13.8",
+    "jose": "^6.2.12",
+    "openai": "^7.20.0",
+    "pino": "^10.3.1",
+    "postgres": "^3.4.9",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "esbuild": "^0.27.0",
+    "tsx": "^4.23.13",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.1"
+  }
+}

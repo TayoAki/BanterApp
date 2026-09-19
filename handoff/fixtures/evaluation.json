@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "framework_id": "F02",
+  "transcript_revision": 1,
+  "criteria": [
+    {
+      "criterion_id": "ordinary_moment",
+      "score": 3,
+      "evidence_quotes": [
+        "I walked into the wrong café."
+      ],
+      "reason": "You name a specific ordinary mishap."
+    },
+    {
+      "criterion_id": "personal_reaction",
+      "score": 3,
+      "evidence_quotes": [
+        "I was trying to look like I’d planned it."
+      ],
+      "reason": "You reveal the thought behind your reaction."
+    },
+    {
+      "criterion_id": "response_opening",
+      "score": 0,
+      "evidence_quotes": [],
+      "reason": "This exercise asks for an explicit invitation; the response ends before adding one."
+    }
+  ],
+  "status": "scored",
+  "boundary_gate": "clear",
+  "confidence": "medium",
+  "strength": {
+    "evidence_quote": "I was trying to look like I’d planned it.",
+    "explanation": "This gives the listener a glimpse inside your head."
+  },
+  "priority_improvement": "For this exercise, add a light way for the listener to join in. This is a practice target, not a rule that every reply must end in a question.",
+  "retry_instruction": "Keep the moment and reaction. Add one light invitation in your own words.",
+  "source_example_ids": [
+    "E02-01"
+  ],
+  "vocal_delivery_assessed": false
+}

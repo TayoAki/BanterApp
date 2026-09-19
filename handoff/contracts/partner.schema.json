@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "partner_reply": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 600
+    },
+    "conversation_state": {
+      "type": "string",
+      "enum": [
+        "continuing",
+        "ended"
+      ]
+    },
+    "boundary_signal": {
+      "type": "string",
+      "enum": [
+        "none",
+        "uncertain",
+        "disengaged"
+      ]
+    }
+  },
+  "required": [
+    "partner_reply",
+    "conversation_state",
+    "boundary_signal"
+  ]
+}

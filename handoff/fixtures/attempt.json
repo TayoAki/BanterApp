@@ -1,0 +1,10 @@
+{
+  "attempt_id": "fixture-f02-a1",
+  "framework_id": "F02",
+  "prompt_id": "F02-P01",
+  "transcript_revision": 1,
+  "confirmed_transcript": "I walked into the wrong café. I was trying to look like I’d planned it.",
+  "fictional": false,
+  "audio_duration_seconds": 32,
+  "is_guided_retry": false
+}

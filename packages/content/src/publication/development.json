@@ -1,0 +1,9 @@
+{
+  "manifest": "development",
+  "note": "DEVELOPMENT PREVIEW ONLY. Treats every draft seed as published so the end-to-end flow can run locally. Not curriculum-reviewed; not a rights decision. Production startup rejects this manifest.",
+  "publish_all_drafts": true,
+  "frameworks": {},
+  "prompts": {},
+  "lessons": {},
+  "examples": {}
+}
