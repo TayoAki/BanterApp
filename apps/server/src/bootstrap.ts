@@ -53,6 +53,15 @@ export function createContext(config: ServerConfig, overrides: ContextOverrides 
 
 /** Applies pending migrations and refreshes content versions. Safe to run on every start. */
 export async function prepareDatabase(ctx: ServerContext): Promise<void> {
+  // Every table forces RLS with no policies for the server role; the server must connect as a
+  // role that bypasses RLS (Supabase `postgres`/service connection). Anything else would fail
+  // silently on every private read, so refuse to start in production.
+  const role = (await ctx.sql<{ ok: boolean; name: string }[]>`select (rolbypassrls or rolsuper) as ok, rolname as name from pg_roles where rolname = current_user`)[0];
+  if (!role?.ok) {
+    const message = `Database role ${role?.name ?? 'unknown'} does not bypass row level security; use the service connection.`;
+    if (ctx.config.isProduction) throw new Error(message);
+    ctx.log.warn(message);
+  }
   const applied = await migrate(ctx.sql, (m) => ctx.log.info({ migration: m }, 'migration'));
   if (applied.length > 0) ctx.log.info({ count: applied.length }, 'migrations applied');
   await seedContentVersions(ctx.sql, ctx.catalog);

@@ -51,6 +51,7 @@ export interface RoleplayState {
     boundary_signal: 'none' | 'uncertain' | 'disengaged' | null;
     partner_speech_asset_id: string | null;
     job_id: string | null;
+    deleted?: boolean;
   }>;
   ended: boolean;
   session_evaluation_id: string | null;
@@ -177,6 +178,7 @@ export async function ensureSessionReservation(ctx: ServerContext, actor: Actor,
   const plan = await getPlan(ctx, actor.userId);
   await ctx.sql.begin(async (tx) => {
     await reserveSession(ctx, tx as unknown as typeof ctx.sql, actor.userId, session.id, plan);
-    await tx`update public.practice_sessions set status = 'active', updated_at = now() where id = ${session.id} and status in ('released', 'expired')`;
+    await tx`update public.practice_sessions set status = 'active', quota_window_date = ${ctx.now().toISOString().slice(0, 10)}, updated_at = now()
+       where id = ${session.id} and status in ('released', 'expired')`;
   });
 }

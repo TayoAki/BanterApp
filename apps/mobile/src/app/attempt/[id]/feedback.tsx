@@ -43,14 +43,20 @@ export default function FeedbackScreen() {
   const [reason, setReason] = useState<(typeof REASONS)[number][0]>('score_seems_wrong');
   const [share, setShare] = useState(false);
   const [reported, setReported] = useState(false);
+  const [stillWorking, setStillWorking] = useState(false);
+  const [pollRound, setPollRound] = useState(0);
 
   useEffect(() => {
     const a = attempt.data;
     if (!a || a.stage !== 'evaluating' || !a.evaluation_job_id) return;
     const controller = new AbortController();
-    void pollJob(a.evaluation_job_id, { signal: controller.signal }).then(() => attempt.refetch());
+    void pollJob(a.evaluation_job_id, { signal: controller.signal }).then((outcome) => {
+      if (controller.signal.aborted) return;
+      if (outcome.kind === 'still_working') setStillWorking(true);
+      else void attempt.refetch();
+    });
     return () => controller.abort();
-  }, [attempt.data?.stage, attempt.data?.evaluation_job_id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [attempt.data?.stage, attempt.data?.evaluation_job_id, pollRound]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const rewrite = useMutation({
     mutationFn: async () => {
@@ -70,6 +76,18 @@ export default function FeedbackScreen() {
   const a = attempt.data;
   const e = evaluation.data;
 
+  if (stillWorking && a && a.stage === 'evaluating') {
+    return (
+      <Screen>
+        <Eyebrow>Feedback</Eyebrow>
+        <Card tone="lavender">
+          <Body>We’re still working—come back shortly. Your words are saved and this practice stays in Today as a pending item.</Body>
+          <Button title="Check again" variant="secondary" onPress={() => { setStillWorking(false); setPollRound((n) => n + 1); void attempt.refetch(); }} />
+          <Button title="Back to Today" variant="ghost" onPress={() => router.replace('/(tabs)/today')} />
+        </Card>
+      </Screen>
+    );
+  }
   if (attempt.isPending || (a && a.stage === 'evaluating') || (evaluationId && evaluation.isPending)) {
     return (
       <Screen>
@@ -103,6 +121,12 @@ export default function FeedbackScreen() {
         <View style={{ width: 44 }} />
       </Row>
       <Heading style={{ textAlign: 'center' }}>{headingFor(e)}</Heading>
+      {!e.current ? (
+        <Card tone="lavender">
+          <Body>This feedback is for an earlier version of your transcript. The corrected words have their own feedback.</Body>
+          <Button title="Open current feedback" variant="secondary" onPress={() => router.replace(`/attempt/${a.attempt_id}/transcript`)} />
+        </Card>
+      ) : null}
 
       <Card>
         <Row style={{ justifyContent: 'space-between' }}>
@@ -181,7 +205,11 @@ export default function FeedbackScreen() {
       ) : (
         <Card tone="lavender">
           <Body>{e.status === 'needs_revision' ? 'Revise the wording first; the technique never needs pressure or threats. Then record again.' : 'Record a little more so there’s something to assess.'}</Body>
-          <Button title="Record again" onPress={() => router.replace(`/practice/${a.session_id}/record`)} />
+          {isRetry ? (
+            <Label>The included retry for this session is used. Tomorrow’s prompt is a fresh start.</Label>
+          ) : (
+            <Button title="Record again" onPress={() => router.replace(`/practice/${a.session_id}/record?retry_of=${a.attempt_id}`)} accessibilityHint="Records your included retry for this session" />
+          )}
         </Card>
       )}
       {rewrite.isError ? <ErrorBox message="Couldn’t start the rewrite right now. Your feedback is saved." action={() => rewrite.mutate()} actionTitle="Try again" /> : null}

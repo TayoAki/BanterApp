@@ -44,6 +44,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     let mounted = true;
+    let unsubscribe: (() => void) | null = null;
     (async () => {
       if (mode === 'supabase') {
         const supabase = getSupabase()!;
@@ -55,16 +56,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
           setSession(next);
           setStatus(next ? 'signed_in' : 'signed_out');
         });
-        return () => sub.subscription.unsubscribe();
+        unsubscribe = () => sub.subscription.unsubscribe();
+        return;
       }
       const stored = env.name === 'production' ? null : await AsyncStorage.getItem(DEV_TOKEN_KEY);
       if (!mounted) return;
       setDevUser(stored);
       setStatus(stored ? 'signed_in' : 'signed_out');
-      return undefined;
     })();
     return () => {
       mounted = false;
+      unsubscribe?.();
     };
   }, [mode]);
 
@@ -99,13 +101,15 @@ export function AuthProvider({ children }: PropsWithChildren) {
     if (!supabase) throw new Error('Sign-in is not configured for this build.');
     const { error } = await supabase.auth.verifyOtp({ email: address.trim(), token: code.trim(), type: 'email' });
     if (error) throw error;
-    await AsyncStorage.setItem(AUTH_AT_KEY, String(Date.now()));
+    lastAuthAt = Date.now();
+    await AsyncStorage.setItem(AUTH_AT_KEY, String(lastAuthAt));
   }, []);
 
   const signInDevelopment = useCallback(async (id: string) => {
     if (env.name === 'production' || mode === 'supabase') throw new Error('Development sign-in is unavailable.');
     await AsyncStorage.setItem(DEV_TOKEN_KEY, id);
-    await AsyncStorage.setItem(AUTH_AT_KEY, String(Date.now()));
+    lastAuthAt = Date.now();
+    await AsyncStorage.setItem(AUTH_AT_KEY, String(lastAuthAt));
     setDevUser(id);
     setStatus('signed_in');
   }, [mode]);
@@ -118,6 +122,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     await clearAllClientKeys();
     await resetPurchasesIdentity();
     for (const k of [DEV_TOKEN_KEY, AUTH_AT_KEY, 'mm.pendingRoute']) await AsyncStorage.removeItem(k);
+    lastAuthAt = null;
     if (mode === 'supabase') await getSupabase()?.auth.signOut();
     setDevUser(null);
     setSession(null);

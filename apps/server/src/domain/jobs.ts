@@ -82,16 +82,37 @@ export function jobStatusDto(job: JobRow): JobStatusDto {
     result_kind: job.state === 'succeeded' ? (job.result_kind as JobStatusDto['result_kind']) : null,
     error:
       job.state === 'failed' || job.state === 'canceled'
-        ? { code: job.error_code ?? 'failed', message: sanitizeMessage(job.error_message), retryable: job.error_retryable ?? false }
+        ? { code: job.error_code ?? 'failed', message: safeMessageFor(job.type, job.error_code), retryable: job.error_retryable ?? false }
         : null,
     updated_at: job.updated_at.toISOString(),
   };
 }
 
-function sanitizeMessage(m: string | null): string {
-  if (!m) return 'The job could not finish.';
-  // Never leak provider payloads or secrets; keep bounded user-safe text.
-  return m.replace(/(sk-[A-Za-z0-9_-]{6,})/g, '[redacted]').slice(0, 240);
+/**
+ * Fixed user-facing messages keyed by job type and error code. The raw
+ * provider/internal message stays server-side in jobs.error_message.
+ */
+export function safeMessageFor(type: JobType, code: string | null): string {
+  if (code === 'superseded_revision') return 'The transcript changed, so this step was replaced.';
+  if (code === 'attempt_deleted' || code === 'account_deleting' || code === 'stale') return 'This practice is no longer available.';
+  if (code === 'invalid_model_output') return type === 'rewrite' ? 'A rewrite couldn’t be validated this time.' : 'Feedback couldn’t finish yet.';
+  if (code === 'provider_rate_limited') return 'The service is busy. Try again in a moment.';
+  if (code === 'provider_denied') return 'The service is unavailable right now.';
+  switch (type) {
+    case 'transcribe':
+      return 'Your recording is saved on this device. Try sending it again.';
+    case 'evaluate':
+    case 'roleplay_evaluate':
+      return 'Your words are saved. Feedback couldn’t finish yet.';
+    case 'rewrite':
+      return 'A rewrite isn’t available right now. Your feedback is saved.';
+    case 'speech':
+      return 'Audio is unavailable right now.';
+    case 'roleplay_turn':
+      return 'The reply couldn’t be generated yet.';
+    default:
+      return 'This step couldn’t finish yet.';
+  }
 }
 
 export async function getOwnedJob(ctx: ServerContext, userId: string, jobId: string): Promise<JobRow> {

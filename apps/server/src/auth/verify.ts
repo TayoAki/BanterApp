@@ -56,10 +56,28 @@ export function createSupabaseVerifier(config: ServerConfig): TokenVerifier {
       const role = (payload as { role?: unknown }).role;
       if (role !== undefined && role !== 'authenticated') throw ApiError.unauthenticated('Session role not accepted.');
       const email = typeof (payload as { email?: unknown }).email === 'string' ? ((payload as { email: string }).email) : null;
-      const authTime = typeof (payload as { auth_time?: unknown }).auth_time === 'number' ? (payload as { auth_time: number }).auth_time : null;
-      return { userId: payload.sub, email, issuedAt: payload.iat ?? null, authTime, mode: 'supabase' };
+      return { userId: payload.sub, email, issuedAt: payload.iat ?? null, authTime: authTimeFromClaims(payload), mode: 'supabase' };
     },
   };
+}
+
+/**
+ * Supabase access tokens carry no `auth_time`; the most recent entry in the
+ * `amr` (authentication methods) array records when the user last proved
+ * their identity. Token refreshes issue new `iat` values, so `iat` is not
+ * used. Absent claims yield null and recent-auth gated actions are refused.
+ */
+export function authTimeFromClaims(payload: JWTPayload): number | null {
+  const direct = (payload as { auth_time?: unknown }).auth_time;
+  if (typeof direct === 'number' && Number.isFinite(direct)) return direct;
+  const amr = (payload as { amr?: unknown }).amr;
+  if (!Array.isArray(amr)) return null;
+  let latest: number | null = null;
+  for (const entry of amr) {
+    const ts = (entry as { timestamp?: unknown } | null)?.timestamp;
+    if (typeof ts === 'number' && Number.isFinite(ts) && (latest === null || ts > latest)) latest = ts;
+  }
+  return latest;
 }
 
 function decodeHeader(token: string): { alg?: string } {

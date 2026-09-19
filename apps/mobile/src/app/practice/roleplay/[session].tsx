@@ -120,7 +120,7 @@ export default function RoleplayScreen() {
             {pendingConfirmed ? (
               <Button title="Send my confirmed words" onPress={() => submitTurn.mutate({ attemptId: confirmedAttemptId!, revision: Number(revision) })} loading={submitTurn.isPending} disabled={waiting} />
             ) : null}
-            <Button title="Speak my turn" variant="secondary" onPress={() => router.push(`/practice/${sessionId}/record`)} disabled={waiting || submitTurn.isPending} />
+            <Button title="Speak my turn" variant="secondary" onPress={() => router.push(`/practice/${sessionId}/record?roleplay=1&exchange=${nextExchange}`)} disabled={waiting || submitTurn.isPending} />
             <Label>Or type it:</Label>
             <TextInput value={typed} onChangeText={setTyped} multiline style={styles.input} placeholder="Type what you’d say…" accessibilityLabel="Typed turn" editable={!waiting && !submitTurn.isPending} />
             <Button title="Send typed turn" onPress={() => submitTurn.mutate({ text: typed })} disabled={typed.trim().length === 0 || waiting} loading={submitTurn.isPending} />

@@ -284,6 +284,8 @@ export interface EvaluationDto {
   source_copy_flag: { example_id: string; note: string } | null;
   is_guided_retry: boolean;
   rewrite_id: string | null;
+  /** False when the transcript was corrected after this feedback; stale feedback never advances progress. */
+  current: boolean;
   created_at: string;
 }
 

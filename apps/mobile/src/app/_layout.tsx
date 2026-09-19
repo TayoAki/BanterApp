@@ -5,7 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { api } from '../lib/api';
-import { AuthProvider, useAuth } from '../lib/auth';
+import { AuthProvider, useAuth, type AuthStatus } from '../lib/auth';
 import { configureNotificationHandling, routeFromNotification } from '../lib/notifications';
 import { setPendingRoute, takePendingRoute } from '../lib/pending-route';
 import { QueryProvider } from '../lib/query';
@@ -24,6 +24,7 @@ function Gate() {
   const router = useRouter();
   const hydrate = useTakes((s) => s.hydrate);
   const handledInitial = useRef(false);
+  const previousStatus = useRef<AuthStatus>('loading');
 
   const prefs = useQuery({ queryKey: ['preferences', userId], queryFn: api.preferences, enabled: status === 'signed_in' });
 
@@ -45,13 +46,19 @@ function Gate() {
     const first = segments[0] ?? '';
     const isPublic = PUBLIC_SEGMENTS.has(first);
     if (status === 'signed_out') {
+      // Allow the next sign-in to redirect again, and only remember a destination when the
+      // learner arrived signed out (deep link / relaunch), never when they just signed out.
+      handledInitial.current = false;
+      const cameFromSignedIn = previousStatus.current === 'signed_in';
+      previousStatus.current = status;
       if (!isPublic) {
-        void setPendingRoute(`/${segments.join('/')}`);
+        if (!cameFromSignedIn) void setPendingRoute(`/${segments.join('/')}`);
         router.replace('/welcome');
       }
       SplashScreen.hideAsync().catch(() => undefined);
       return;
     }
+    previousStatus.current = status;
     if (status === 'signed_in') {
       if (prefs.isPending) return;
       const onboarded = prefs.data?.onboarding_completed ?? true;

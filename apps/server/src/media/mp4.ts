@@ -78,6 +78,27 @@ function parseMvhd(buf: Buffer, box: { start: number; headerSize: number; size: 
   return duration / timescale;
 }
 
+function parseMdhd(buf: Buffer, box: { start: number; headerSize: number; size: number }): number {
+  const p = box.start + box.headerSize;
+  const version = buf.readUInt8(p);
+  if (version === 1) {
+    const timescale = buf.readUInt32BE(p + 20);
+    const duration = Number(buf.readBigUInt64BE(p + 24));
+    return timescale === 0 ? 0 : duration / timescale;
+  }
+  const timescale = buf.readUInt32BE(p + 12);
+  const duration = buf.readUInt32BE(p + 16);
+  return timescale === 0 ? 0 : duration / timescale;
+}
+
+/** Implied bitrate sanity window for compressed speech audio (bits per second). */
+export const MIN_PLAUSIBLE_BITRATE = 8_000;
+export const MAX_PLAUSIBLE_BITRATE = 512_000;
+
+export function impliedBitrate(bytes: number, durationSeconds: number): number {
+  return durationSeconds > 0 ? (bytes * 8) / durationSeconds : Number.POSITIVE_INFINITY;
+}
+
 function parseHdlrType(buf: Buffer, box: { start: number; headerSize: number; size: number }): string {
   const p = box.start + box.headerSize;
   // version/flags (4) + pre_defined (4) + handler_type (4)
@@ -118,6 +139,7 @@ export function probeMp4(buf: Buffer): MediaProbe {
 
   let audioTracks = 0;
   let hasVideo = false;
+  let trackDuration = 0;
   let audio: { codec: string; channels: number; sample_rate: number } | null = null;
   for (const trak of boxes(buf, moov.start + moov.headerSize, moov.start + moov.size)) {
     if (trak.type !== 'trak') continue;
@@ -128,6 +150,8 @@ export function probeMp4(buf: Buffer): MediaProbe {
     if (handler === 'vide') hasVideo = true;
     if (handler !== 'soun') continue;
     audioTracks += 1;
+    const mdhd = findChild(buf, mdia.start + mdia.headerSize, mdia.start + mdia.size, 'mdhd');
+    if (mdhd) trackDuration = Math.max(trackDuration, parseMdhd(buf, mdhd));
     const minf = findChild(buf, mdia.start + mdia.headerSize, mdia.start + mdia.size, 'minf');
     const stbl = minf ? findChild(buf, minf.start + minf.headerSize, minf.start + minf.size, 'stbl') : null;
     const stsd = stbl ? findChild(buf, stbl.start + stbl.headerSize, stbl.start + stbl.size, 'stsd') : null;
@@ -138,7 +162,8 @@ export function probeMp4(buf: Buffer): MediaProbe {
   return {
     container: 'mp4',
     brand,
-    duration_seconds: duration,
+    // The movie header can under-declare; the audio track's own duration is authoritative when longer.
+    duration_seconds: Math.max(duration, trackDuration),
     codec: audio?.codec ?? null,
     channels: audio?.channels ?? null,
     sample_rate: audio?.sample_rate ?? null,

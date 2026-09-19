@@ -27,7 +27,7 @@ const STEP_LABEL: Record<UploadStep, string> = {
  * confirmed or the learner discards it.
  */
 export default function ReviewRecording() {
-  const { session: sessionId, take: takeId, retry_of, interrupted } = useLocalSearchParams<{ session: string; take: string; retry_of?: string; interrupted?: string }>();
+  const { session: sessionId, take: takeId, retry_of, interrupted, roleplay, exchange } = useLocalSearchParams<{ session: string; take: string; retry_of?: string; interrupted?: string; roleplay?: string; exchange?: string }>();
   const router = useRouter();
   const take = useTakes((s) => s.takes.find((t) => t.id === takeId));
   const update = useTakes((s) => s.update);
@@ -45,9 +45,16 @@ export default function ReviewRecording() {
       let attemptId = take.attemptId;
       if (!attemptId) {
         const key = await stableClientKey(take.attemptClientKey);
-        const attempt = await api.createAttempt(sessionId!, { client_key: key, ordinal: retry_of ? 2 : 1, retry_of: retry_of ?? null, input_mode: 'voice' });
+        const attempt = await api.createAttempt(sessionId!, { client_key: key, ordinal: take.ordinal ?? (retry_of ? 2 : 1), retry_of: retry_of ?? null, input_mode: 'voice' });
         attemptId = attempt.attempt_id;
         await update(take.id, { attemptId, state: 'uploading' });
+      }
+      // Bytes already stored: resume at upload-complete (the server requeues a failed transcription).
+      if (take.assetId && (take.state === 'uploaded' || take.state === 'transcribing')) {
+        setStep('verifying');
+        const done = await api.uploadComplete(attemptId, { client_key: take.uploadClientKey, asset_id: take.assetId });
+        await update(take.id, { state: 'transcribing' });
+        return done.attempt.attempt_id;
       }
       setStep('requesting_upload');
       const upload = await api.createUpload(attemptId, { client_key: take.uploadClientKey, expected_bytes: bytes, mime: 'audio/mp4', duration_seconds_hint: take.durationMs / 1000 });
@@ -65,9 +72,10 @@ export default function ReviewRecording() {
     onError: () => setStep('idle'),
   });
 
+  const recordParams = [retry_of ? `retry_of=${retry_of}` : null, roleplay ? `roleplay=1&exchange=${exchange ?? '1'}` : null].filter(Boolean).join('&');
   const recordAgain = async () => {
     if (take) await remove(take.id, true);
-    router.replace(`/practice/${sessionId}/record${retry_of ? `?retry_of=${retry_of}` : ''}`);
+    router.replace(`/practice/${sessionId}/record${recordParams ? `?${recordParams}` : ''}`);
   };
   const discard = async () => {
     if (take) await remove(take.id, true);

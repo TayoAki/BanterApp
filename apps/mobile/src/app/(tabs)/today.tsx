@@ -48,7 +48,17 @@ export default function Today() {
         <Card tone="lavender">
           <Label style={{ color: colors.ink, fontWeight: '600' }}>Pending practice on this device</Label>
           <Body>A recording is waiting to be sent. It stays here for 24 hours.</Body>
-          <Button title="Review pending recording" variant="secondary" onPress={() => router.push(`/practice/${pending[0]!.sessionId}/review-recording?take=${pending[0]!.id}`)} />
+          <Button
+            title={pending[0]!.attemptId && pending[0]!.state !== 'recorded' && pending[0]!.state !== 'uploading' ? 'Continue pending practice' : 'Review pending recording'}
+            variant="secondary"
+            onPress={() =>
+              router.push(
+                pending[0]!.attemptId && pending[0]!.state !== 'recorded' && pending[0]!.state !== 'uploading'
+                  ? `/attempt/${pending[0]!.attemptId}/transcript`
+                  : `/practice/${pending[0]!.sessionId}/review-recording?take=${pending[0]!.id}`,
+              )
+            }
+          />
         </Card>
       ) : null}
 

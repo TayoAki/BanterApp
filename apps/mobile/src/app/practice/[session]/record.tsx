@@ -4,6 +4,7 @@ import * as Crypto from 'expo-crypto';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { File } from 'expo-file-system';
 import { RECORDING_HARD_LIMIT_SECONDS } from '@marshmemos/contracts/api';
 import { Waveform } from '../../../components/Waveform';
 import { Body, Button, Card, ErrorBox, Eyebrow, Heading, Label, Loading, Screen } from '../../../components/ui';
@@ -30,7 +31,8 @@ const RECORDING_OPTIONS: RecordingOptions = {
 type Phase = 'permission' | 'denied' | 'recording' | 'stopping' | 'stopped' | 'error';
 
 export default function RecordScreen() {
-  const { session: sessionId, retry_of } = useLocalSearchParams<{ session: string; retry_of?: string }>();
+  const { session: sessionId, retry_of, roleplay, exchange } = useLocalSearchParams<{ session: string; retry_of?: string; roleplay?: string; exchange?: string }>();
+  const exchangeNo = roleplay ? Math.max(1, Number.parseInt(exchange ?? '1', 10) || 1) : null;
   const router = useRouter();
   const session = useQuery({ queryKey: ['session', sessionId], queryFn: () => api.session(sessionId!), enabled: !!sessionId });
   const addTake = useTakes((s) => s.add);
@@ -40,39 +42,53 @@ export default function RecordScreen() {
   const [samples, setSamples] = useState<number[]>([]);
   const stoppingRef = useRef(false);
   const finishedRef = useRef(false);
+  const lastDurationRef = useRef(0);
+  const finishRef = useRef<(reason: 'user' | 'limit' | 'background' | 'interrupted', uriFromNative?: string | null) => Promise<void>>(async () => undefined);
+  const nativeFinishedRef = useRef<string | null>(null);
 
+  // The native recorder reports completion (including the 90-second automatic stop) here.
   const onStatus = useCallback((status: RecordingStatus) => {
     if (status.hasError) {
       setNotice('Recording stopped. Review this take or record again.');
       setPhase('error');
+      return;
     }
-    if (status.mediaServicesDidReset) {
-      setNotice('Recording stopped. Review this take or record again.');
+    if (status.mediaServicesDidReset) setNotice('Recording stopped. Review this take or record again.');
+    if (status.isFinished) {
+      nativeFinishedRef.current = status.url;
+      void finishRef.current('limit', status.url);
     }
   }, []);
   const recorder = useAudioRecorder(RECORDING_OPTIONS, onStatus);
   const state = useAudioRecorderState(recorder, 100);
 
-  // Collect real metering samples for the waveform.
+  // Collect real metering samples for the waveform and remember the last non-zero duration
+  // (native resets the counter to 0 once it stops).
   useEffect(() => {
     if (state.isRecording && typeof state.metering === 'number') {
       samplesRef.current = [...samplesRef.current.slice(-63), state.metering];
       setSamples(samplesRef.current);
     }
+    if (state.durationMillis > 0) lastDurationRef.current = state.durationMillis;
   }, [state.metering, state.isRecording, state.durationMillis]);
 
   const finish = useCallback(
-    async (reason: 'user' | 'limit' | 'background' | 'interrupted') => {
+    async (reason: 'user' | 'limit' | 'background' | 'interrupted', uriFromNative?: string | null) => {
       if (stoppingRef.current || finishedRef.current) return;
       stoppingRef.current = true;
       setPhase('stopping');
+      let uri: string | null = uriFromNative ?? null;
       try {
-        await recorder.stop();
+        if (!uriFromNative) await recorder.stop();
       } catch {
-        // stop may throw if the recorder was already torn down
+        // stop may throw if the recorder already finished natively
       }
-      const uri = recorder.uri;
-      const durationMs = state.durationMillis;
+      try {
+        uri = uri ?? recorder.uri;
+      } catch {
+        uri = uri ?? nativeFinishedRef.current;
+      }
+      const durationMs = lastDurationRef.current;
       finishedRef.current = true;
       if (!uri) {
         setNotice('We couldn’t save that take. Try another one.');
@@ -95,12 +111,15 @@ export default function RecordScreen() {
           state: 'recorded',
           assetId: null,
           uploadClientKey: newClientKey('upload'),
-          attemptClientKey: retry_of ? `attempt:${sessionId}:retry:${retry_of}` : `attempt:${sessionId}:1`,
+          attemptClientKey: exchangeNo ? `attempt:${sessionId}:rp:${exchangeNo}` : retry_of ? `attempt:${sessionId}:retry:${retry_of}` : `attempt:${sessionId}:1`,
+          ordinal: exchangeNo ?? (retry_of ? 2 : 1),
+          roleplay: Boolean(exchangeNo),
         });
         track('recording_finished', { reason, duration_ms: durationMs });
         if (reason !== 'user' && reason !== 'limit') setNotice('Recording stopped. Review this take or record again.');
         setPhase('stopped');
-        router.replace(`/practice/${sessionId}/review-recording?take=${id}${retry_of ? `&retry_of=${retry_of}` : ''}${reason !== 'user' && reason !== 'limit' ? '&interrupted=1' : ''}`);
+        const params = [`take=${id}`, retry_of ? `retry_of=${retry_of}` : null, exchangeNo ? `roleplay=1&exchange=${exchangeNo}` : null, reason !== 'user' && reason !== 'limit' ? 'interrupted=1' : null].filter(Boolean).join('&');
+        router.replace(`/practice/${sessionId}/review-recording?${params}`);
       } catch {
         setNotice('We couldn’t keep that recording (low storage or an invalid file). Try another take.');
         setPhase('error');
@@ -108,8 +127,9 @@ export default function RecordScreen() {
         stoppingRef.current = false;
       }
     },
-    [recorder, state.durationMillis, addTake, sessionId, retry_of, router],
+    [recorder, addTake, sessionId, retry_of, exchangeNo, router],
   );
+  finishRef.current = finish;
 
   const begin = useCallback(async () => {
     setNotice(null);
@@ -137,12 +157,11 @@ export default function RecordScreen() {
     void begin();
   }, [begin]);
 
-  // Hard limit guard (the native forDuration also stops at 90s) and auto-finish when native stops.
+  // Hard limit guard in JS as well; the native forDuration stop reports through onStatus.
   useEffect(() => {
     if (phase !== 'recording') return;
-    if (state.durationMillis >= RECORDING_HARD_LIMIT_SECONDS * 1000) void finish('limit');
-    else if (!state.isRecording && state.durationMillis > 500 && !stoppingRef.current) void finish('limit');
-  }, [state.durationMillis, state.isRecording, phase, finish]);
+    if (state.durationMillis >= (RECORDING_HARD_LIMIT_SECONDS + 1) * 1000) void finish('limit');
+  }, [state.durationMillis, phase, finish]);
 
   // Backgrounding, screen lock, calls: stop and preserve the take. Never silently resume.
   useEffect(() => {
@@ -152,31 +171,41 @@ export default function RecordScreen() {
     return () => sub.remove();
   }, [phase, finish]);
 
-  // Navigation away stops the microphone and releases it.
+  // Navigation away: the hook releases the native recorder (which stops the
+  // microphone); we only restore the audio mode. The released object must not
+  // be touched here.
   useEffect(() => {
     return () => {
-      if (recorder.isRecording) {
-        recorder.stop().catch(() => undefined);
-      }
       setAudioModeAsync({ allowsRecording: false }).catch(() => undefined);
     };
-  }, [recorder]);
+  }, []);
 
   const discard = async () => {
     stoppingRef.current = true;
+    let uri: string | null = null;
     try {
       if (recorder.isRecording) await recorder.stop();
+      uri = recorder.uri;
     } catch {
       // ignore
     }
     finishedRef.current = true;
+    if (uri) {
+      try {
+        const f = new File(uri);
+        if (f.exists) f.delete();
+      } catch {
+        // best effort
+      }
+    }
     router.back();
   };
 
   const typeInstead = useMutation({
     mutationFn: async () => {
-      const key = await stableClientKey(retry_of ? `attempt:${sessionId}:retry:${retry_of}:typed` : `attempt:${sessionId}:1:typed`);
-      return api.createAttempt(sessionId!, { client_key: key, ordinal: retry_of ? 2 : 1, retry_of: retry_of ?? null, input_mode: 'typed' });
+      // Same logical attempt as the voice take would have used; a voice attempt without words continues as typed.
+      const key = await stableClientKey(exchangeNo ? `attempt:${sessionId}:rp:${exchangeNo}` : retry_of ? `attempt:${sessionId}:retry:${retry_of}` : `attempt:${sessionId}:1`);
+      return api.createAttempt(sessionId!, { client_key: key, ordinal: exchangeNo ?? (retry_of ? 2 : 1), retry_of: retry_of ?? null, input_mode: 'typed' });
     },
     onSuccess: (attempt) => router.replace(`/attempt/${attempt.attempt_id}/transcript`),
   });

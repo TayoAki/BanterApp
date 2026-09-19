@@ -9,12 +9,13 @@ import { getOwnedSession, type RoleplayState, type SessionRow } from './sessions
 export function roleplayStateDto(session: SessionRow): RoleplayStateDto {
   const state = session.roleplay_state;
   if (!state) throw ApiError.conflict('This session is not a roleplay.');
-  const completed = state.exchanges.filter((e) => e.partner_reply !== null).length;
+  const visible = state.exchanges.filter((e) => !e.deleted);
+  const completed = visible.filter((e) => e.partner_reply !== null).length;
   return {
     session_id: session.id,
     scenario: state.scenario,
     partner_name: state.partner_name,
-    exchanges: state.exchanges.map((e) => ({
+    exchanges: visible.map((e) => ({
       exchange: e.exchange,
       attempt_id: e.attempt_id,
       learner_text: e.learner_text,
@@ -96,9 +97,9 @@ export async function finishRoleplay(ctx: ServerContext, actor: Actor, sessionId
   const session = await getOwnedSession(ctx, actor.userId, sessionId);
   if (session.mode !== 'roleplay' || !session.roleplay_state) throw ApiError.conflict('This session is not a roleplay.');
   const state = session.roleplay_state;
-  const completed = state.exchanges.filter((e) => e.partner_reply !== null);
+  const completed = state.exchanges.filter((e) => e.partner_reply !== null && !e.deleted);
   if (completed.length === 0) throw ApiError.conflict('Complete at least one exchange before finishing.');
-  if (state.exchanges.some((e) => e.partner_reply === null)) throw ApiError.conflict('A partner reply is still being generated.');
+  if (state.exchanges.some((e) => e.partner_reply === null && !e.deleted)) throw ApiError.conflict('A partner reply is still being generated.');
   const last = completed.at(-1)!;
   return ctx.sql.begin(async (tx) => {
     const { job } = await enqueueJob(tx as never, {

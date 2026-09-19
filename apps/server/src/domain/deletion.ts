@@ -20,6 +20,12 @@ export async function deleteAttempt(ctx: ServerContext, actor: Actor, attemptId:
   return ctx.sql.begin(async (tx) => {
     await tx`update public.attempts set deleted_at = now(), stage = 'deleted', deletion_generation = deletion_generation + 1, updated_at = now() where id = ${attempt.id}`;
     await tx`select public.cancel_jobs_for_attempt(${attempt.id}, 'attempt_deleted')`;
+    await tx`update public.jobs set checkpoint = '{}'::jsonb, payload = '{}'::jsonb, error_message = null, updated_at = now() where attempt_id = ${attempt.id} and type <> 'delete_attempt'`;
+    await tx`
+      update public.practice_sessions s set roleplay_state = jsonb_set(s.roleplay_state, '{exchanges}', (
+          select coalesce(jsonb_agg(case when e->>'attempt_id' = ${attempt.id} then e || '{"learner_text":"","deleted":true}'::jsonb else e end order by (e->>'exchange')::int), '[]'::jsonb)
+            from jsonb_array_elements(s.roleplay_state->'exchanges') e)), updated_at = now()
+       where s.id = ${attempt.session_id} and s.roleplay_state is not null`;
     await tx`update public.audio_assets set state = 'deleted', deleted_at = now(), updated_at = now() where attempt_id = ${attempt.id} and deleted_at is null`;
     await tx`delete from public.skill_evidence where attempt_id = ${attempt.id}`;
     await tx`delete from public.completions where attempt_id = ${attempt.id}`;

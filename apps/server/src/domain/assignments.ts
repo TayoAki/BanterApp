@@ -132,7 +132,7 @@ export async function todayResponse(ctx: ServerContext, actor: Actor): Promise<T
        ${assignment ? ctx.sql`and s.assignment_id = ${assignment.id}` : ctx.sql`and s.created_at::date = ${localDay}::date`}
      order by s.created_at desc limit 1`;
   const completed = await ctx.sql<{ session_id: string; attempt_id: string; evaluation_id: string | null }[]>`
-    select pd.attempt_id, a.session_id, (select id from public.evaluations e where e.attempt_id = a.id and e.kind = 'attempt' order by created_at desc limit 1) as evaluation_id
+    select pd.attempt_id, a.session_id, (select id from public.evaluations e where e.attempt_id = a.id and e.kind = 'attempt' and e.transcript_revision = a.current_revision order by created_at desc limit 1) as evaluation_id
       from public.practice_days pd join public.attempts a on a.id = pd.attempt_id
      where pd.user_id = ${actor.userId} and pd.local_day = ${localDay}`;
   const skills = await skillStateRows(ctx, actor.userId);

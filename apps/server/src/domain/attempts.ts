@@ -2,7 +2,7 @@ import type { AttemptDto, AttemptStage, CreateAttemptRequest, InputMode, UploadR
 import { ACCEPTED_AUDIO_MIME, RECORDING_HARD_LIMIT_SECONDS, UPLOAD_MAX_BYTES } from '@marshmemos/contracts';
 import type { Actor, ServerContext } from '../context.js';
 import { ApiError } from '../http/errors.js';
-import { MediaProbeError, probeAudio } from '../media/mp4.js';
+import { impliedBitrate, MAX_PLAUSIBLE_BITRATE, MediaProbeError, MIN_PLAUSIBLE_BITRATE, probeAudio } from '../media/mp4.js';
 import { rawAudioKey } from '../storage/types.js';
 import { enqueueJob, type JobRow } from './jobs.js';
 import { getOwnedSession, SESSION_LIMITS, type SessionRow } from './sessions.js';
@@ -127,8 +127,21 @@ export function mediaBounds() {
 export async function createUpload(ctx: ServerContext, actor: Actor, attemptId: string, req: UploadRequest): Promise<UploadResponse> {
   const attempt = await getOwnedAttempt(ctx, actor.userId, attemptId);
   if (attempt.input_mode !== 'voice') throw ApiError.conflict('This attempt uses typed input.');
-  if (!['created', 'uploading'].includes(attempt.stage)) throw ApiError.conflict(`Attempt is already ${attempt.stage}.`);
+  const retakeable = attempt.current_revision === 0 && ['uploaded', 'transcribing', 'transcript_review'].includes(attempt.stage);
+  if (!['created', 'uploading'].includes(attempt.stage) && !retakeable) throw ApiError.conflict(`Attempt is already ${attempt.stage}.`);
   if (req.expected_bytes <= 0) throw ApiError.validation('expected_bytes must be positive.');
+  if (retakeable) {
+    // "Record again" before any words were confirmed replaces the unconfirmed take:
+    // the old raw audio is discarded, its transcription canceled, and the attempt reset.
+    await ctx.sql.begin(async (tx) => {
+      await tx`update public.jobs set state = 'canceled', error_code = 'retake', finished_at = now(), updated_at = now(), lease_until = null
+         where attempt_id = ${attempt.id} and type = 'transcribe' and state in ('queued', 'running', 'failed')`;
+      await tx`update public.audio_assets set state = 'deleted', deleted_at = now(), expires_at = now(), updated_at = now() where attempt_id = ${attempt.id} and kind = 'raw' and deleted_at is null`;
+      await tx`delete from public.transcript_revisions where attempt_id = ${attempt.id} and revision = 0`;
+      await tx`update public.attempts set stage = 'created', transcription_job_id = null, recoverable_error = null, updated_at = now() where id = ${attempt.id} and current_revision = 0`;
+    });
+    attempt.stage = 'created';
+  }
   if (req.expected_bytes > UPLOAD_MAX_BYTES) throw ApiError.tooLarge(`Recording exceeds ${UPLOAD_MAX_BYTES} bytes.`);
   const mime = req.mime.toLowerCase().split(';')[0]!.trim();
   if (!(ACCEPTED_AUDIO_MIME as readonly string[]).includes(mime)) throw ApiError.unprocessable('Unsupported audio type. Record M4A/AAC audio.');
@@ -175,7 +188,23 @@ export async function completeUpload(ctx: ServerContext, actor: Actor, attemptId
   if (!asset) throw ApiError.notFound('Upload not found.');
   if (asset.state === 'verified' && attempt.transcription_job_id) {
     const job = (await ctx.sql<JobRow[]>`select * from public.jobs where id = ${attempt.transcription_job_id}`)[0];
-    if (job) return { job, created: false };
+    if (job && (job.state === 'queued' || job.state === 'running' || job.state === 'succeeded')) return { job, created: false };
+    // A failed/canceled transcription resumes the same logical stage (bounded requeue) without re-verifying bytes.
+    if (job) {
+      return ctx.sql.begin(async (tx) => {
+        const requeued = await enqueueJob(tx as never, {
+          userId: actor.userId,
+          attemptId: attempt.id,
+          sessionId: attempt.session_id,
+          type: 'transcribe',
+          generation: actor.deletionGeneration,
+          stageKey: job.stage_key,
+          payload: job.payload,
+        });
+        await tx`update public.attempts set stage = 'transcribing', transcription_job_id = ${requeued.job.id}, recoverable_error = null, updated_at = now() where id = ${attempt.id}`;
+        return requeued;
+      });
+    }
   }
   if (!['pending_upload', 'uploaded'].includes(asset.state)) throw ApiError.conflict(`Upload is ${asset.state}.`);
 
@@ -202,6 +231,12 @@ export async function completeUpload(ctx: ServerContext, actor: Actor, attemptId
   if (probe.duration_seconds < 0.5) {
     await rejectAsset(ctx, asset.id, attempt.id, 'too_short', 'The recording is too short to transcribe.');
     throw ApiError.unprocessable('The recording is too short to transcribe.');
+  }
+  // A container that declares a short duration for a large payload is not trusted (billing is per audio minute).
+  const bitrate = impliedBitrate(info.bytes, probe.duration_seconds);
+  if (bitrate < MIN_PLAUSIBLE_BITRATE || bitrate > MAX_PLAUSIBLE_BITRATE) {
+    await rejectAsset(ctx, asset.id, attempt.id, 'implausible_media', 'The recording’s declared length does not match its size.');
+    throw ApiError.unprocessable('The recording’s declared length does not match its size.');
   }
   const verifiedMime = probe.container === 'mp3' ? 'audio/mpeg' : 'audio/mp4';
 
@@ -253,7 +288,10 @@ export async function confirmTranscript(
   }
   const text = req.confirmed_text.trim();
   const raw = await getRevision(ctx, attempt.id, 0);
-  if (attempt.input_mode === 'voice' && !raw) throw ApiError.conflict('No transcript to confirm yet.');
+  // A voice attempt whose transcription never produced words (failed, or the
+  // learner chose "Type instead") may continue as typed input.
+  const typedFallback = attempt.input_mode === 'voice' && !raw;
+  if (typedFallback && !['created', 'uploading', 'uploaded'].includes(attempt.stage)) throw ApiError.conflict('No transcript to confirm yet.');
   const previous = attempt.current_revision > 0 ? await getRevision(ctx, attempt.id, attempt.current_revision) : raw;
   const edited = previous ? (previous.confirmed_text ?? previous.raw_text ?? '') !== text : true;
   const newRevision = attempt.current_revision + 1;
@@ -262,7 +300,11 @@ export async function confirmTranscript(
     if (!raw) {
       await tx`
         insert into public.transcript_revisions (attempt_id, revision, user_id, raw_text, confirmed_text, edited, provider_meta)
-        values (${attempt.id}, 0, ${actor.userId}, ${text}, null, false, ${tx.json({ input_mode: 'typed' })})`;
+        values (${attempt.id}, 0, ${actor.userId}, ${text}, null, false, ${tx.json({ input_mode: typedFallback ? 'typed_fallback' : 'typed' })})`;
+      if (typedFallback) {
+        await tx`update public.jobs set state = 'canceled', error_code = 'typed_fallback', finished_at = now(), updated_at = now(), lease_until = null
+           where attempt_id = ${attempt.id} and type = 'transcribe' and state in ('queued', 'running', 'failed')`;
+      }
     }
     const inserted = await tx<TranscriptRevisionRow[]>`
       insert into public.transcript_revisions (attempt_id, revision, user_id, raw_text, confirmed_text, confirmed_at, edited, audio_asset_id)
@@ -272,6 +314,8 @@ export async function confirmTranscript(
     await tx`
       update public.jobs set state = 'canceled', error_code = 'superseded_revision', finished_at = now(), updated_at = now(), lease_until = null
        where attempt_id = ${attempt.id} and type in ('evaluate', 'rewrite', 'speech') and state in ('queued', 'running')`;
+    // Synthesized audio of the old story expires now so the sweep removes the objects.
+    await tx`update public.audio_assets set expires_at = now(), updated_at = now() where attempt_id = ${attempt.id} and kind = 'tts' and deleted_at is null`;
     const updated = await tx<AttemptRow[]>`
       update public.attempts set current_revision = ${newRevision}, stage = 'transcript_review', evaluation_job_id = null, recoverable_error = null, updated_at = now()
        where id = ${attempt.id} and current_revision = ${req.expected_revision} returning *`;
@@ -288,6 +332,7 @@ export async function requestEvaluation(ctx: ServerContext, actor: Actor, attemp
     throw ApiError.conflict('Evaluate the current confirmed revision.', { current_revision: attempt.current_revision });
   }
   const session = await getOwnedSession(ctx, actor.userId, attempt.session_id);
+  if (session.mode === 'roleplay') throw ApiError.conflict('Conversation turns are assessed once at the end of the roleplay.');
   const cfg = configVersion(ctx, session.framework_version);
   const existing = await ctx.sql<{ id: string }[]>`
     select id from public.evaluations where attempt_id = ${attempt.id} and transcript_revision = ${revision} and config_version = ${cfg} and kind = 'attempt'`;

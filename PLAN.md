@@ -21,8 +21,8 @@ ajv 8.20.0, zod 4.6.5, jose 6.2.12, TypeScript 6.0.3, vitest 5.0.1).
 | `pnpm typecheck` (contracts, content, server, mobile) | pass |
 | `packages/contracts` tests | 43 passed (fixture totals 6/9 = 6/6 + 0/3; hallucinated evidence, borrowed criteria, wrong revision/framework/source id, null-score rules, low-confidence withholding, rewrite fact checks, verifier spans, improvement labeling, source-copy detection on all 20 examples, provider schema translation) |
 | `packages/content` tests + `pnpm content:validate` | 11 passed; 407 integrity checks incl. 10 PDF SHA-256, 20 verbatim quotes in page text, statements on page 1, 30 prompts/30 lessons, 10 authored Notice keys quoting exact spans |
-| `apps/server` unit tests | 15 passed (config guards, prompt template byte-equality, MP4/MP3 probe on real ffmpeg-encoded fixtures) |
-| `apps/server` DB tests (`pnpm test:db`) | 35 passed: quota concurrency (2 simultaneous starts admit 1), idempotent reserve/commit/release, Pro mid-window cap raise, expired-reservation guard with active job, CHECK cap; job claim with SKIP LOCKED across 2 workers, lease expiry reclaim, lost-lease commit refusal, retry/backoff/terminal failure, requeue of same logical stage, sweeper, cancellation; RLS own-row reads, anon published-only, no client access to jobs/assets/reservations/billing, no client writes, composite ownership FK; full API journey (below) |
+| `apps/server` unit tests | 18 passed (config guards, prompt template byte-equality, MP4/MP3 probe on real ffmpeg-encoded fixtures, Supabase-shaped JWT verification incl. recent-auth from `amr`) |
+| `apps/server` DB tests (`pnpm test:db`) | 43 passed: quota concurrency (2 simultaneous starts admit 1), idempotent reserve/commit/release, Pro mid-window cap raise, expired-reservation guard with active job, CHECK cap; job claim with SKIP LOCKED across 2 workers, lease expiry reclaim, lost-lease commit refusal, retry/backoff/terminal failure, requeue of same logical stage, sweeper, cancellation; RLS own-row reads, anon published-only, no client access to jobs/assets/reservations/billing, no client writes, composite ownership FK; full API journey (below) |
 | `apps/mobile` tests | 9 passed (format helpers; exact production copy present per docs/05, "Framework fit"/"Hear a stronger version" absent) |
 | `tests` package | handoff validator PASS, repository layout, no secrets in `.env.example` |
 | `npx expo config --type introspect` | NSMicrophoneUsageDescription exact text, RECORD_AUDIO, scheme `marshmemos`, bundle/package `com.marshmemos.app`, `FOREGROUND_SERVICE_MICROPHONE` blocked |
@@ -44,7 +44,41 @@ non-qualifying, threat → `needs_revision` with no total and no rewrite, invent
 rejected twice → `needs_detail`, insufficient input → null scores and no XP → reports with/without
 evidence consent, timezone change rate limit, single-practice deletion removes storage objects and rows and
 cancels a late job, billing webhook auth/dedupe/environment isolation/reconciliation, account deletion with
-recent-auth requirement and completed cleanup, expired asset sweep removes objects.
+recent-auth requirement and completed cleanup, expired asset sweep removes objects; recovery paths: re-take
+before confirmation replaces the unconfirmed upload, failed transcription resumes via upload-complete or
+continues as typed input, roleplay turns cannot be evaluated individually and a deleted turn is scrubbed from
+conversation state and job checkpoints, Bearer-prefixed provider headers reach the webhook authenticator,
+implausible container durations are rejected, superseded TTS returns 410 after a correction.
+
+## Independent review pass (same revision)
+
+Two unanchored reviews (server security/consistency; mobile runtime) were run on the first build and every
+substantiated finding was fixed and pinned with a test where the environment allows:
+
+- Server: recent-auth now derives from Supabase `amr` timestamps (was an absent `auth_time` claim, which
+  would have blocked all account deletions in production); released reservations re-taken in a later UTC
+  window move to that window; superseded rewrite audio is unplayable and expires; failed transcriptions are
+  requeued on upload-complete instead of dead-ending; job error text shown to clients is a fixed per-code
+  message; roleplay attempts cannot be evaluated/rewritten/spoken individually; attempt deletion scrubs
+  roleplay state and job checkpoints; candidate evaluations are written inside the commit guard; commit
+  locks the attempt before the job; `claim_jobs` skips exhausted leases; `fail_job`/`complete_job` merge
+  checkpoints; the billing webhook is excluded from bearer auth; repair retries send only fixed text in the
+  instruction channel (details ride in the data envelope); `createAttempt`/roleplay turns reactivate a
+  released session; evaluations carry a `current` flag and Today uses the current-revision evaluation; media
+  duration also reads the audio track and the implied bitrate must be plausible; the server refuses to start
+  in production without an RLS-bypassing database role.
+- Mobile (fixed, not executable here): recorder unmount cleanup no longer touches the released native
+  object (would have been a fatal error after every recording); completion is driven by the native finish
+  event so the 90 s cap shows the take with its real duration; discarded takes delete their file; an
+  uploaded take resumes at upload-complete instead of re-uploading; "Record again" before confirmation
+  reuses the attempt (server re-take), after feedback it records the included retry; Today routes pending
+  items by state; the auth gate redirects on a second sign-in and no longer stores the sign-out screen as
+  the next destination; feedback shows a "still working" state after the two-minute budget and marks stale
+  feedback; transcript copy distinguishes a missing local file; roleplay is reachable from fictional
+  lessons and its spoken turns hand confirmed words back to the conversation.
+
+Note on migrations: the SQL function file was edited in place because no database outside this build had
+applied it yet. From the first deployed environment onward, changes go in new migration files.
 
 ## Slice status
 

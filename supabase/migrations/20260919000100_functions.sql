@@ -43,7 +43,10 @@ begin
   -- the learner resumes the same session (same logical allowance).
   select id into r_id from public.reservations where session_id = p_session and status = 'released';
   if r_id is not null then
-    update public.reservations set status = 'reserved', expires_at = now() + p_ttl, updated_at = now() where id = r_id;
+    -- The session may resume in a later UTC window: move the reservation to
+    -- the window whose counter is being incremented.
+    update public.reservations set status = 'reserved', window_date = p_window, expires_at = now() + p_ttl, updated_at = now() where id = r_id;
+    update public.practice_sessions set quota_window_date = p_window, updated_at = now() where id = p_session;
   else
     insert into public.reservations (user_id, window_date, session_id, status, expires_at)
     values (p_user, p_window, p_session, 'reserved', now() + p_ttl)
@@ -139,7 +142,7 @@ begin
   with candidates as (
     select id from public.jobs
      where (state = 'queued' and scheduled_at <= now())
-        or (state = 'running' and lease_until is not null and lease_until < now())
+        or (state = 'running' and lease_until is not null and lease_until < now() and attempts < max_attempts)
      order by scheduled_at
      limit p_limit
      for update skip locked
@@ -171,7 +174,7 @@ language plpgsql as $$
 begin
   update public.jobs
      set state = 'succeeded', result_id = p_result_id, result_kind = p_result_kind,
-         checkpoint = coalesce(p_checkpoint, checkpoint), finished_at = now(), updated_at = now(),
+         checkpoint = checkpoint || coalesce(p_checkpoint, '{}'::jsonb), finished_at = now(), updated_at = now(),
          lease_until = null
    where id = p_job and worker_id = p_worker and state = 'running';
   return found;
@@ -190,13 +193,13 @@ begin
     update public.jobs
        set state = 'queued', scheduled_at = now() + p_backoff, lease_until = null, worker_id = null,
            error_code = p_code, error_message = p_message, error_retryable = true,
-           checkpoint = coalesce(p_checkpoint, checkpoint), updated_at = now()
+           checkpoint = checkpoint || coalesce(p_checkpoint, '{}'::jsonb), updated_at = now()
      where id = p_job;
     return 'requeued';
   end if;
   update public.jobs
      set state = 'failed', lease_until = null, error_code = p_code, error_message = p_message,
-         error_retryable = p_retryable, checkpoint = coalesce(p_checkpoint, checkpoint),
+         error_retryable = p_retryable, checkpoint = checkpoint || coalesce(p_checkpoint, '{}'::jsonb),
          finished_at = now(), updated_at = now()
    where id = p_job;
   return 'failed';

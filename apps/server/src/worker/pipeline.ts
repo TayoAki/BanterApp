@@ -90,8 +90,12 @@ export async function evaluateSubject(ctx: ServerContext, subject: EvaluationSub
   validation = validateEvaluation(result.raw, validationCtx);
   if (!validation.ok) {
     repaired = true;
-    const hint = `Previous output was rejected: ${validation.code}: ${validation.message}. Return exactly the assigned criterion IDs once each, revision ${subject.transcriptRevision}, and only exact substrings of the confirmed transcript as evidence.`;
-    result = await ctx.providers.evaluator.evaluate(input, { timeoutMs: ctx.config.TIMEOUT_EVALUATE_MS, repairHint: hint });
+    const repair = {
+      code: validation.code,
+      note: `The previous output was rejected by the validator. Return exactly the assigned criterion IDs once each, the provided transcript revision, only exact substrings of the confirmed transcript as evidence, and only the provided source example IDs.`,
+      details: { message: validation.message, ...(validation.details ?? {}) },
+    };
+    result = await ctx.providers.evaluator.evaluate(input, { timeoutMs: ctx.config.TIMEOUT_EVALUATE_MS, repair });
     validation = validateEvaluation(result.raw, validationCtx);
     if (!validation.ok) {
       throw new InvalidModelOutputError('evaluate', validation.code, validation.message, validation.details);

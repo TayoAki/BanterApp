@@ -11,6 +11,7 @@ afterAll(async () => h.close());
 
 const A = USER_A;
 const B = USER_B;
+const C = '33333333-3333-4333-8333-333333333333';
 let sessionId = '';
 let attemptId = '';
 let evaluationId = '';
@@ -237,6 +238,113 @@ describe('first vertical slice: record → transcript → feedback → rewrite �
     const e2 = await api<EvaluationDto>(h.app, 'GET', `/v1/evaluations/${att.json.evaluation_id}`, { user: A });
     expect(e2.json.transcript_revision).toBe(2);
     for (const c of e2.json.criteria) for (const q of c.evidence_quotes) expect(q).not.toContain('café');
+    expect(e2.json.current).toBe(true);
+    const old = await api<EvaluationDto>(h.app, 'GET', `/v1/evaluations/${evaluationId}`, { user: A });
+    expect(old.json.current).toBe(false);
+    // Audio synthesized for the café story must not play after the correction.
+    const stale = await api<{ code: string }>(h.app, 'GET', `/v1/assets/${assetId}/playback`, { user: A });
+    expect(stale.status).toBe(410);
+    expect((await h.ctx.sql<{ expires_at: Date }[]>`select expires_at from public.audio_assets where id = ${assetId}`)[0]!.expires_at.getTime()).toBeLessThanOrEqual(Date.now());
+  });
+});
+
+describe('recovery paths', () => {
+  beforeAll(async () => {
+    // A dedicated Pro learner so several sessions fit in one UTC window.
+    h.demo.pro.add(C);
+    await api(h.app, 'POST', '/v1/entitlements/restore', { user: C, body: { client_key: key('restore-c') } });
+  });
+
+  it('a re-take before any words are confirmed replaces the unconfirmed upload and its transcription', async () => {
+    const s = await api<SessionDto>(h.app, 'POST', '/v1/sessions', { user: C, body: { client_key: key('retake'), mode: 'daily', prompt_id: 'F01-P02', prompt_version: 1 } });
+    const a = await api<AttemptDto>(h.app, 'POST', `/v1/sessions/${s.json.session_id}/attempts`, { user: C, body: { client_key: key('retakea'), ordinal: 1, input_mode: 'voice' } });
+    const up1 = await api<UploadResponse>(h.app, 'POST', `/v1/attempts/${a.json.attempt_id}/upload`, { user: C, body: { client_key: key('up1'), expected_bytes: FIXTURE_M4A.length, mime: 'audio/mp4' } });
+    await uploadToSignedUrl(h.app, up1.json.upload_url, FIXTURE_M4A, 'audio/mp4');
+    await api(h.app, 'POST', `/v1/attempts/${a.json.attempt_id}/upload-complete`, { user: C, body: { client_key: key('uc1'), asset_id: up1.json.asset_id } });
+    await h.worker.drain();
+    expect((await api<AttemptDto>(h.app, 'GET', `/v1/attempts/${a.json.attempt_id}`, { user: C })).json.stage).toBe('transcript_review');
+    // Record again (same attempt): allowed because nothing is confirmed yet.
+    const up2 = await api<UploadResponse>(h.app, 'POST', `/v1/attempts/${a.json.attempt_id}/upload`, { user: C, body: { client_key: key('up2'), expected_bytes: FIXTURE_M4A.length, mime: 'audio/mp4' } });
+    expect(up2.status).toBe(201);
+    const att = await api<AttemptDto>(h.app, 'GET', `/v1/attempts/${a.json.attempt_id}`, { user: C });
+    expect(att.json.stage).toBe('uploading');
+    expect(att.json.transcript.raw_text).toBeNull();
+    expect((await h.ctx.sql<{ state: string }[]>`select state from public.audio_assets where id = ${up1.json.asset_id}`)[0]!.state).toBe('deleted');
+    await uploadToSignedUrl(h.app, up2.json.upload_url, FIXTURE_M4A, 'audio/mp4');
+    const done = await api<{ job: JobStatusDto }>(h.app, 'POST', `/v1/attempts/${a.json.attempt_id}/upload-complete`, { user: C, body: { client_key: key('uc2'), asset_id: up2.json.asset_id } });
+    expect(done.status).toBe(202);
+    await h.worker.drain();
+    // After confirmation, a further re-take is refused.
+    await api(h.app, 'PUT', `/v1/attempts/${a.json.attempt_id}/transcript`, { user: C, body: { client_key: key('rc'), expected_revision: 0, confirmed_text: 'I fixed the shelf and felt oddly proud of the one straight screw.' } });
+    expect((await api(h.app, 'POST', `/v1/attempts/${a.json.attempt_id}/upload`, { user: C, body: { client_key: key('up3'), expected_bytes: 10, mime: 'audio/mp4' } })).status).toBe(409);
+  });
+
+  it('a failed transcription can be resumed by calling upload-complete again, or continued as typed input', async () => {
+    const s = await api<SessionDto>(h.app, 'POST', '/v1/sessions', { user: C, body: { client_key: key('tfail'), mode: 'daily', prompt_id: 'F01-P03', prompt_version: 1 } });
+    const a = await api<AttemptDto>(h.app, 'POST', `/v1/sessions/${s.json.session_id}/attempts`, { user: C, body: { client_key: key('tfaila'), ordinal: 1, input_mode: 'voice' } });
+    const up = await api<UploadResponse>(h.app, 'POST', `/v1/attempts/${a.json.attempt_id}/upload`, { user: C, body: { client_key: key('tup'), expected_bytes: FIXTURE_M4A.length, mime: 'audio/mp4' } });
+    await uploadToSignedUrl(h.app, up.json.upload_url, FIXTURE_M4A, 'audio/mp4');
+    const done = await api<{ job: JobStatusDto }>(h.app, 'POST', `/v1/attempts/${a.json.attempt_id}/upload-complete`, { user: C, body: { client_key: key('tuc'), asset_id: up.json.asset_id } });
+    // Simulate a terminal provider failure on the transcription job.
+    await h.ctx.sql`update public.jobs set state = 'failed', error_code = 'provider_denied', error_message = 'internal bucket detail xyz', error_retryable = false, finished_at = now() where id = ${done.json.job.job_id}`;
+    await h.ctx.sql`update public.attempts set stage = 'uploaded', recoverable_error = '{"code":"provider_denied","message":"x","retryable":true,"stage":"transcribe"}' where id = ${a.json.attempt_id}`;
+    const status = await api<JobStatusDto>(h.app, 'GET', `/v1/jobs/${done.json.job.job_id}`, { user: C });
+    expect(status.json.error?.message).not.toContain('bucket');
+    expect(status.json.error?.message).toBe('The service is unavailable right now.');
+    const again = await api<{ job: JobStatusDto; attempt: AttemptDto }>(h.app, 'POST', `/v1/attempts/${a.json.attempt_id}/upload-complete`, { user: C, body: { client_key: key('tuc'), asset_id: up.json.asset_id } });
+    expect(again.status).toBe(202);
+    expect(again.json.job.state).toBe('queued');
+    expect(again.json.attempt.stage).toBe('transcribing');
+    // Alternatively the learner types instead: mark the job failed again and confirm typed words.
+    await h.ctx.sql`update public.jobs set state = 'failed', finished_at = now() where id = ${again.json.job.job_id}`;
+    await h.ctx.sql`update public.attempts set stage = 'uploaded' where id = ${a.json.attempt_id}`;
+    const typed = await api<AttemptDto>(h.app, 'PUT', `/v1/attempts/${a.json.attempt_id}/transcript`, { user: C, body: { client_key: key('ttyped'), expected_revision: 0, confirmed_text: 'Work is fine. Honestly the best part was a quiet lunch by myself.' } });
+    expect(typed.status).toBe(200);
+    expect(typed.json.current_revision).toBe(1);
+    expect((await h.ctx.sql<{ state: string }[]>`select state from public.jobs where id = ${again.json.job.job_id}`)[0]!.state).toBe('canceled');
+  });
+
+  it('roleplay turns cannot be evaluated or rewritten individually, and a deleted turn is scrubbed from the conversation', async () => {
+    const s = await api<SessionDto>(h.app, 'POST', '/v1/sessions', { user: C, body: { client_key: key('rp'), mode: 'roleplay', prompt_id: 'F03-P01', prompt_version: 1 } });
+    expect(s.status).toBe(201);
+    const a1 = await api<AttemptDto>(h.app, 'POST', `/v1/sessions/${s.json.session_id}/attempts`, { user: C, body: { client_key: key('rp1'), ordinal: 1, input_mode: 'typed' } });
+    await api(h.app, 'PUT', `/v1/attempts/${a1.json.attempt_id}/transcript`, { user: C, body: { client_key: key('rp1c'), expected_revision: 0, confirmed_text: 'I sing terribly and I think we should start a two-person choir anyway. You in?' } });
+    const single = await api<{ code: string }>(h.app, 'POST', `/v1/attempts/${a1.json.attempt_id}/evaluate`, { user: C, body: { client_key: key('rp1e'), revision: 1 } });
+    expect(single.status).toBe(409);
+    const turn = await api<{ job: JobStatusDto }>(h.app, 'POST', `/v1/sessions/${s.json.session_id}/roleplay-turn`, { user: C, body: { client_key: key('rpt1'), attempt_id: a1.json.attempt_id, transcript_revision: 1, expected_exchange: 1 } });
+    expect(turn.status).toBe(202);
+    await h.worker.drain();
+    const a2 = await api<AttemptDto>(h.app, 'POST', `/v1/sessions/${s.json.session_id}/attempts`, { user: C, body: { client_key: key('rp2'), ordinal: 2, input_mode: 'typed' } });
+    await api(h.app, 'PUT', `/v1/attempts/${a2.json.attempt_id}/transcript`, { user: C, body: { client_key: key('rp2c'), expected_revision: 0, confirmed_text: 'Secret private sentence about my day.' } });
+    await api(h.app, 'POST', `/v1/sessions/${s.json.session_id}/roleplay-turn`, { user: C, body: { client_key: key('rpt2'), attempt_id: a2.json.attempt_id, transcript_revision: 1, expected_exchange: 2 } });
+    await h.worker.drain();
+    const state = await api<{ exchanges: Array<{ learner_text: string | null; partner_reply: string | null }> }>(h.app, 'GET', `/v1/sessions/${s.json.session_id}/roleplay`, { user: C });
+    expect(state.json.exchanges.length).toBe(2);
+    expect(state.json.exchanges[1]!.partner_reply).toBeTruthy();
+    await api(h.app, 'DELETE', `/v1/attempts/${a2.json.attempt_id}`, { user: C });
+    await h.worker.drain();
+    const after = await api<{ exchanges: Array<{ learner_text: string | null }> }>(h.app, 'GET', `/v1/sessions/${s.json.session_id}/roleplay`, { user: C });
+    expect(after.json.exchanges.length).toBe(1);
+    expect(JSON.stringify(after.json)).not.toContain('Secret private sentence');
+    const jobs = await h.ctx.sql<{ checkpoint: unknown; payload: unknown }[]>`select checkpoint, payload from public.jobs where attempt_id = ${a2.json.attempt_id} and type <> 'delete_attempt'`;
+    expect(JSON.stringify(jobs)).not.toContain('Secret private sentence');
+  });
+
+  it('a webhook with a Bearer-prefixed provider header reaches the webhook authenticator instead of the session verifier', async () => {
+    const res = await api<{ ok: boolean; reason?: string }>(h.app, 'POST', '/v1/billing/events', { user: null, raw: '{}', headers: { authorization: 'Bearer not-a-session' } });
+    expect(res.status).toBe(401);
+    expect(res.json.reason).toBe('authentication_failed');
+  });
+
+  it('rejects a container that declares an implausibly short duration for its size', async () => {
+    const s = await api<SessionDto>(h.app, 'POST', '/v1/sessions', { user: C, body: { client_key: key('bitrate'), mode: 'daily', prompt_id: 'F05-P02', prompt_version: 1 } });
+    const a = await api<AttemptDto>(h.app, 'POST', `/v1/sessions/${s.json.session_id}/attempts`, { user: C, body: { client_key: key('bitratea'), ordinal: 1, input_mode: 'voice' } });
+    const padded = Buffer.concat([FIXTURE_M4A, Buffer.alloc(900_000)]); // 1.5 s declared, ~0.9 MB → ~4.8 Mbps
+    const up = await api<UploadResponse>(h.app, 'POST', `/v1/attempts/${a.json.attempt_id}/upload`, { user: C, body: { client_key: key('bup'), expected_bytes: padded.length, mime: 'audio/mp4' } });
+    await uploadToSignedUrl(h.app, up.json.upload_url, padded, 'audio/mp4');
+    const done = await api<{ code: string; message: string }>(h.app, 'POST', `/v1/attempts/${a.json.attempt_id}/upload-complete`, { user: C, body: { client_key: key('buc'), asset_id: up.json.asset_id } });
+    expect(done.status).toBe(422);
+    expect(done.json.message).toMatch(/declared length/);
   });
 });
 

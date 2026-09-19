@@ -8,6 +8,7 @@ import {
   type FrameworkEvaluator,
   type PartnerInput,
   type PartnerModel,
+  type RepairRequest,
   type RewriteInput,
   type RewriteVerifier,
   type Rewriter,
@@ -94,18 +95,20 @@ export class OpenAITranscriber implements Transcriber {
 
 async function structuredCall(
   client: OpenAI,
-  args: { model: string; instructions: string; data: unknown; schemaName: keyof typeof SCHEMAS; timeoutMs: number; templateVersion: string; repairHint?: string | undefined },
+  args: { model: string; instructions: string; data: unknown; schemaName: keyof typeof SCHEMAS; timeoutMs: number; templateVersion: string; repair?: RepairRequest | undefined },
 ): Promise<StructuredResult> {
   const started = Date.now();
   const schema = toProviderStrictSchema(SCHEMAS[args.schemaName] as Record<string, unknown>);
-  const instructions = [args.instructions, DATA_ENVELOPE_NOTE, args.repairHint ? `Repair note: ${args.repairHint}` : null].filter(Boolean).join('\n\n');
+  // Only fixed server text enters the instruction channel; repair details ride in the data envelope.
+  const instructions = [args.instructions, DATA_ENVELOPE_NOTE, args.repair ? `Repair note (${args.repair.code}): ${args.repair.note}` : null].filter(Boolean).join('\n\n');
+  const data = args.repair?.details !== undefined ? { ...(args.data as Record<string, unknown>), repair_context: { code: args.repair.code, details: args.repair.details } } : args.data;
   let res: Awaited<ReturnType<OpenAI['responses']['create']>>;
   try {
     res = await client.responses.create(
       {
         model: args.model,
         instructions,
-        input: [{ role: 'user', content: [{ type: 'input_text', text: JSON.stringify(args.data) }] }],
+        input: [{ role: 'user', content: [{ type: 'input_text', text: JSON.stringify(data) }] }],
         text: { format: { type: 'json_schema', name: args.schemaName, schema, strict: true } },
         store: false,
         max_output_tokens: 2000,
@@ -164,7 +167,7 @@ export class OpenAIEvaluator implements FrameworkEvaluator {
     readonly model: string,
     private readonly templateVersion: string,
   ) {}
-  async evaluate(input: EvaluationInput, opts: { timeoutMs: number; repairHint?: string }) {
+  async evaluate(input: EvaluationInput, opts: { timeoutMs: number; repair?: RepairRequest }) {
     const data = {
       framework: { id: input.framework.id, source_title: input.framework.source_title, source_statement_verbatim: input.framework.source_statement_verbatim, objective: input.framework.objective },
       rubric_version: input.rubric_version,
@@ -186,7 +189,7 @@ export class OpenAIEvaluator implements FrameworkEvaluator {
       schemaName: 'evaluation',
       timeoutMs: opts.timeoutMs,
       templateVersion: this.templateVersion,
-      repairHint: opts.repairHint,
+      repair: opts.repair,
     });
   }
 }
@@ -197,7 +200,7 @@ export class OpenAIRewriter implements Rewriter {
     readonly model: string,
     private readonly templateVersion: string,
   ) {}
-  async rewrite(input: RewriteInput, opts: { timeoutMs: number; repairHint?: string }) {
+  async rewrite(input: RewriteInput, opts: { timeoutMs: number; repair?: RepairRequest }) {
     const data = {
       framework: { id: input.framework.id, source_statement_verbatim: input.framework.source_statement_verbatim, objective: input.framework.objective },
       rubric_version: input.rubric_version,
@@ -217,7 +220,7 @@ export class OpenAIRewriter implements Rewriter {
       schemaName: 'rewrite',
       timeoutMs: opts.timeoutMs,
       templateVersion: this.templateVersion,
-      repairHint: opts.repairHint,
+      repair: opts.repair,
     });
   }
 }

@@ -76,7 +76,9 @@ export function registerRoutes(app: Hono<Env>): void {
     const ctx = c.get('ctx');
     const actor = requireActor(c);
     const body = parseBody(createAttemptSchema, await c.req.json());
-    const { row, created } = await createAttempt(ctx, actor, parseUuidParam(c.req.param('id'), 'Session'), body);
+    const sessionId = parseUuidParam(c.req.param('id'), 'Session');
+    await ensureSessionReservation(ctx, actor, await getOwnedSession(ctx, actor.userId, sessionId));
+    const { row, created } = await createAttempt(ctx, actor, sessionId, body);
     return c.json(await attemptDto(ctx, row), created ? 201 : 200);
   });
 
@@ -200,6 +202,7 @@ export function registerRoutes(app: Hono<Env>): void {
     const actor = requireActor(c);
     const body = parseBody(roleplayTurnSchema, await c.req.json());
     const sessionId = parseUuidParam(c.req.param('id'), 'Session');
+    await ensureSessionReservation(ctx, actor, await getOwnedSession(ctx, actor.userId, sessionId));
     const { job } = await requestRoleplayTurn(ctx, actor, sessionId, body);
     return c.json({ job: jobStatusDto(job), roleplay: roleplayStateDto(await getOwnedSession(ctx, actor.userId, sessionId)) }, 202);
   });

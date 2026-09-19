@@ -75,3 +75,21 @@ describe('durable job queue', () => {
     expect((await h.ctx.sql<{ n: number }[]>`select public.cancel_jobs_for_attempt(${attemptId}, 'deleted') as n`)[0]!.n).toBe(2);
   });
 });
+
+describe('lease and checkpoint hardening', () => {
+  it('does not re-run a job whose lease expired after its attempts were exhausted', async () => {
+    await h.ctx.sql`insert into public.jobs (user_id, type, generation, stage_key, state, lease_until, attempts, max_attempts, worker_id)
+      values (${USER_A}, 'cleanup_assets', 0, 't6:exhausted', 'running', now() - interval '1 minute', 2, 2, 'w-dead')`;
+    const claimed = await claim('w6');
+    expect(claimed.some((j) => j.stage_key === 't6:exhausted')).toBe(false);
+  });
+
+  it('merges checkpoints on failure instead of overwriting them', async () => {
+    const { job } = await enqueueJob(h.ctx.sql, { userId: USER_A, type: 'cleanup_assets', generation: 0, stageKey: 't7:ckpt', maxAttempts: 3 });
+    const claimed = (await claim('w7')).find((j) => j.id === job.id)!;
+    await h.ctx.sql`update public.jobs set checkpoint = checkpoint || '{"transcript":"kept"}'::jsonb where id = ${claimed.id}`;
+    await h.ctx.sql`select public.fail_job(${claimed.id}, 'w7', 'provider_transient', 'x', true, interval '0 seconds', '{"billing_uncertain":true}'::jsonb)`;
+    const row = (await h.ctx.sql<JobRow[]>`select * from public.jobs where id = ${job.id}`)[0]!;
+    expect(row.checkpoint).toMatchObject({ transcript: 'kept', billing_uncertain: true });
+  });
+});

@@ -16,6 +16,8 @@ export default function TranscriptScreen() {
   const { id: attemptId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const attempt = useQuery({ queryKey: ['attempt', attemptId], queryFn: () => api.attempt(attemptId!), enabled: !!attemptId });
+  const session = useQuery({ queryKey: ['session', attempt.data?.session_id], queryFn: () => api.session(attempt.data!.session_id), enabled: !!attempt.data?.session_id });
+  const isRoleplay = session.data?.mode === 'roleplay';
   const take = useTakes((s) => s.takes.find((t) => t.attemptId === attemptId));
   const markConfirmed = useTakes((s) => s.update);
   const [text, setText] = useState<string | null>(null);
@@ -43,7 +45,9 @@ export default function TranscriptScreen() {
       if (outcome.kind === 'still_working') setWaitState('still_working');
       else {
         setWaitState('idle');
-        if (outcome.kind === 'failed') setJobError('Your recording is saved on this device. Try sending it again.');
+        if (outcome.kind === 'failed') {
+          setJobError(take && takeFileExists(take.uri) ? 'Your recording is saved on this device. Try sending it again.' : 'Transcription couldn’t finish and the recording is no longer on this device. Record again or type what you said.');
+        }
         await attempt.refetch();
       }
     });
@@ -79,6 +83,11 @@ export default function TranscriptScreen() {
         revision = confirmed.current_revision;
         if (take) await markConfirmed(take.id, { state: 'confirmed' });
       }
+      if (isRoleplay) {
+        // Conversation turns are assessed once at the end; hand the confirmed words back to the roleplay.
+        router.replace(`/practice/roleplay/${a.session_id}?attempt=${a.attempt_id}&revision=${revision}`);
+        return 'roleplay' as const;
+      }
       const key = await stableClientKey(`evaluate:${a.attempt_id}:${revision}`);
       const { job, evaluation_id } = await api.evaluate(a.attempt_id, { client_key: key, revision });
       if (evaluation_id && job.state === 'succeeded') return 'done' as const;
@@ -91,6 +100,7 @@ export default function TranscriptScreen() {
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ['attempt', attemptId] });
       await queryClient.invalidateQueries({ queryKey: ['today'] });
+      if (result === 'roleplay') return;
       if (result === 'done') router.replace(`/attempt/${attemptId}/feedback`);
       else setWaitState('still_working');
     },
@@ -129,7 +139,7 @@ export default function TranscriptScreen() {
         footer={
           a.stage !== 'transcribing' && waitState !== 'still_working' ? (
             <Button
-              title={waitState === 'evaluating' ? 'Getting your feedback…' : 'Get my feedback'}
+              title={waitState === 'evaluating' ? 'Getting your feedback…' : isRoleplay ? 'Use these words' : 'Get my feedback'}
               onPress={() => getFeedback.mutate()}
               loading={busy}
               disabled={invalidLength || (a.current_revision >= 2 && current.trim() !== (a.transcript.confirmed_text ?? '').trim())}
@@ -164,7 +174,7 @@ export default function TranscriptScreen() {
         ) : null}
         {a.stage === 'uploaded' && a.recoverable_error && !(take && takeFileExists(take.uri)) ? (
           <Card>
-            <Body>The recording for this practice is no longer on this device, so it can’t be sent again.</Body>
+            <Body>The recording for this practice is no longer on this device, so it can’t be sent again. You can record again or type what you said below.</Body>
             <Button title="Record again" variant="secondary" onPress={() => router.replace(`/practice/${a.session_id}/record`)} />
           </Card>
         ) : null}
@@ -179,7 +189,10 @@ export default function TranscriptScreen() {
           </Card>
         ) : null}
 
-        {a.stage !== 'transcribing' && (!lowContent || editing) ? (
+        {(a.stage === 'uploaded' || a.stage === 'created') && !typed && !editing ? (
+          <Button title="Type instead" variant="ghost" onPress={() => setEditing(true)} />
+        ) : null}
+        {a.stage !== 'transcribing' && (!lowContent || editing) && (a.stage !== 'uploaded' || editing) ? (
           <Card>
             <Label>{typed ? 'Your words' : 'Your transcript'}</Label>
             <TextInput

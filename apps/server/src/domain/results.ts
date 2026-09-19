@@ -57,6 +57,7 @@ export async function evaluationDto(ctx: ServerContext, row: EvaluationRow): Pro
   const rewrite = (
     await ctx.sql<{ id: string }[]>`select id from public.rewrites where evaluation_id = ${row.id} order by created_at desc limit 1`
   )[0];
+  const currentRevision = (await ctx.sql<{ current_revision: number }[]>`select current_revision from public.attempts where id = ${row.attempt_id}`)[0]?.current_revision ?? null;
   return {
     evaluation_id: row.id,
     attempt_id: row.attempt_id,
@@ -82,6 +83,7 @@ export async function evaluationDto(ctx: ServerContext, row: EvaluationRow): Pro
     source_copy_flag: row.source_copy_flag,
     is_guided_retry: row.is_guided_retry,
     rewrite_id: rewrite?.id ?? null,
+    current: currentRevision === row.transcript_revision,
     created_at: row.created_at.toISOString(),
   };
 }
@@ -91,6 +93,8 @@ export async function requestRewrite(ctx: ServerContext, actor: Actor, evaluatio
   const ev = await getOwnedEvaluation(ctx, actor.userId, evaluationId);
   if (ev.kind !== 'attempt') throw ApiError.conflict('Rewrites are generated for attempt feedback only.');
   const attempt = await getOwnedAttempt(ctx, actor.userId, ev.attempt_id);
+  const sessionMode = (await ctx.sql<{ mode: string }[]>`select mode from public.practice_sessions where id = ${attempt.session_id}`)[0]?.mode;
+  if (sessionMode === 'roleplay') throw ApiError.conflict('Rewrites are not generated for conversation turns.');
   if (attempt.current_revision !== ev.transcript_revision) throw ApiError.conflict('This feedback is for an older transcript revision.');
   if (ev.result.status === 'insufficient_input') throw ApiError.conflict('There is not enough confirmed text to rewrite.');
   if (ev.result.boundary_gate === 'needs_revision') throw ApiError.conflict('Revise the response before requesting a rewrite.');
@@ -227,11 +231,17 @@ export async function playback(ctx: ServerContext, actor: Actor, assetId: string
   const playableState = asset.kind === 'tts' ? asset.state === 'ready' : asset.state === 'verified' || asset.state === 'ready';
   if (!playableState) throw ApiError.conflict('Audio is unavailable right now.');
   if (asset.expires_at && asset.expires_at <= ctx.now()) throw new ApiError(410, 'expired', 'This audio has expired.');
-  const signed = await ctx.storage.createSignedRead(asset.object_key, ctx.config.PLAYBACK_URL_TTL_SECONDS);
   let text: string | null = null;
   if (asset.kind === 'tts' && asset.rewrite_id) {
-    text = (await ctx.sql<{ rewrite_text: string | null }[]>`select rewrite_text from public.rewrites where id = ${asset.rewrite_id}`)[0]?.rewrite_text ?? null;
+    // Audio for a superseded transcript revision must never play as the current story.
+    const rw = (
+      await ctx.sql<{ rewrite_text: string | null; transcript_revision: number; current_revision: number }[]>`
+        select r.rewrite_text, r.transcript_revision, a.current_revision from public.rewrites r join public.attempts a on a.id = r.attempt_id where r.id = ${asset.rewrite_id}`
+    )[0];
+    if (!rw || rw.transcript_revision !== rw.current_revision) throw new ApiError(410, 'superseded', 'This audio belongs to an older transcript revision.');
+    text = rw.rewrite_text;
   }
+  const signed = await ctx.storage.createSignedRead(asset.object_key, ctx.config.PLAYBACK_URL_TTL_SECONDS);
   return {
     asset_id: asset.id,
     url: signed.url,

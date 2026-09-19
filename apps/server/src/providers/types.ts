@@ -77,9 +77,20 @@ export interface EvaluationInput {
   partner_turns: Array<{ exchange: number; learner: string; partner: string | null }> | null;
 }
 
+/**
+ * Bounded repair retry. `note` is fixed server text keyed by the failure code
+ * (safe for the instruction channel); `details` may contain model- or
+ * learner-derived strings and therefore travels only in the data envelope.
+ */
+export interface RepairRequest {
+  code: string;
+  note: string;
+  details?: unknown;
+}
+
 export interface FrameworkEvaluator {
   readonly model: string;
-  evaluate(input: EvaluationInput, opts: { timeoutMs: number; repairHint?: string }): Promise<StructuredResult>;
+  evaluate(input: EvaluationInput, opts: { timeoutMs: number; repair?: RepairRequest }): Promise<StructuredResult>;
 }
 
 export interface RewriteInput {
@@ -97,7 +108,7 @@ export interface RewriteInput {
 
 export interface Rewriter {
   readonly model: string;
-  rewrite(input: RewriteInput, opts: { timeoutMs: number; repairHint?: string }): Promise<StructuredResult>;
+  rewrite(input: RewriteInput, opts: { timeoutMs: number; repair?: RepairRequest }): Promise<StructuredResult>;
 }
 
 export interface VerifyInput {

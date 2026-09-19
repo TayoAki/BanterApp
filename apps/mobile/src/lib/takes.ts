@@ -25,6 +25,8 @@ export interface LocalTake {
   assetId: string | null;
   uploadClientKey: string;
   attemptClientKey: string;
+  ordinal: number;
+  roleplay: boolean;
 }
 
 interface TakeStore {

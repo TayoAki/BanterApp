@@ -22,8 +22,8 @@ export function routeForAttempt(attempt: Pick<AttemptDto, 'attempt_id' | 'sessio
   switch (attempt.stage) {
     case 'created':
     case 'uploading':
-    case 'uploaded':
       return `/practice/${attempt.session_id}/record`;
+    case 'uploaded':
     case 'transcribing':
     case 'transcript_review':
     case 'evaluating':

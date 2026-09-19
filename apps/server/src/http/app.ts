@@ -91,7 +91,12 @@ export function createApp(ctx: ServerContext, options: { verifier?: TokenVerifie
   }
 
   // Authentication: optional for public catalog routes, required elsewhere.
+  // The billing webhook authenticates with the provider's own header and is excluded.
   app.use('/v1/*', async (c, next) => {
+    if (c.req.path === '/v1/billing/events') {
+      await next();
+      return;
+    }
     const token = extractBearer(c.req.header('authorization'));
     if (token) {
       const identity = await verifier.verify(token);

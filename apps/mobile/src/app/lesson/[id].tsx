@@ -22,6 +22,10 @@ export default function Lesson() {
     mutationFn: () => startSession({ promptId: lesson.data!.prompt!.id, promptVersion: lesson.data!.prompt!.version, mode: 'lesson' }),
     onSuccess: (s) => router.push(`/practice/${s.session_id}/record`),
   });
+  const conversation = useMutation({
+    mutationFn: () => startSession({ promptId: lesson.data!.prompt!.id, promptVersion: lesson.data!.prompt!.version, mode: 'roleplay' }),
+    onSuccess: (s) => router.push(`/practice/roleplay/${s.session_id}`),
+  });
 
   if (lesson.isPending) {
     return (
@@ -157,8 +161,12 @@ export default function Lesson() {
             {l.prompt.target_seconds.min}–{l.prompt.target_seconds.max} seconds · {l.prompt.hard_limit_seconds}-second limit
             {l.prompt.kind === 'fictional_roleplay' ? ' · fictional scenario' : ''}
           </Label>
+          {l.prompt.kind === 'fictional_roleplay' && l.stage !== 'notice' && status === 'signed_in' ? (
+            <Button title="Practice as a short conversation" variant="secondary" onPress={() => conversation.mutate()} loading={conversation.isPending} accessibilityHint="Up to three exchanges with a fictional adult partner; uses one practice session" />
+          ) : null}
         </Card>
       ) : null}
+      {conversation.isError ? <ErrorBox message={conversation.error instanceof ApiClientError ? conversation.error.message : 'Couldn’t start the conversation.'} /> : null}
       {practice.isError ? <ErrorBox message={practice.error instanceof ApiClientError ? practice.error.message : 'Couldn’t start practice.'} /> : null}
       <Gap />
     </Screen>

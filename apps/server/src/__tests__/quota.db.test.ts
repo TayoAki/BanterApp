@@ -72,3 +72,25 @@ describe('allowance reservation', () => {
     await expect(h.ctx.sql`update public.quota_windows set committed = 99 where user_id = ${USER_A} and window_date = current_date`).rejects.toThrow();
   });
 });
+
+describe('cross-window resume', () => {
+  it('re-taking a released reservation in a later UTC window moves it to that window', async () => {
+    const s5 = await newSession(USER_A);
+    await h.ctx.sql`update public.practice_sessions set quota_window_date = current_date - 1 where id = ${s5}`;
+    await h.ctx.sql`insert into public.quota_windows (user_id, window_date, allowed_sessions) values (${USER_A}, current_date - 1, 3) on conflict do nothing`;
+    await h.ctx.sql`insert into public.reservations (user_id, window_date, session_id, status, expires_at) values (${USER_A}, current_date - 1, ${s5}, 'released', now())`;
+    const before = (await h.ctx.sql<{ reserved: number; committed: number }[]>`select reserved, committed from public.quota_windows where user_id = ${USER_A} and window_date = current_date`)[0]!;
+    const r = await reserve(s5, 3);
+    expect(r[0]!.reservation_id).toBeTruthy();
+    const moved = (await h.ctx.sql<{ window_date: string; status: string }[]>`select window_date::text as window_date, status from public.reservations where session_id = ${s5}`)[0]!;
+    expect(moved.status).toBe('reserved');
+    expect(moved.window_date).toBe(new Date().toISOString().slice(0, 10));
+    expect((await h.ctx.sql<{ quota_window_date: string }[]>`select quota_window_date::text as quota_window_date from public.practice_sessions where id = ${s5}`)[0]!.quota_window_date).toBe(moved.window_date);
+    await h.ctx.sql`select public.commit_session_allowance(${s5})`;
+    const after = (await h.ctx.sql<{ reserved: number; committed: number }[]>`select reserved, committed from public.quota_windows where user_id = ${USER_A} and window_date = current_date`)[0]!;
+    expect(after.reserved).toBe(before.reserved);
+    expect(after.committed).toBe(before.committed + 1);
+    const yesterday = (await h.ctx.sql<{ reserved: number; committed: number }[]>`select reserved, committed from public.quota_windows where user_id = ${USER_A} and window_date = current_date - 1`)[0]!;
+    expect(yesterday).toMatchObject({ reserved: 0, committed: 0 });
+  });
+});

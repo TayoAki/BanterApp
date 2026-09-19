@@ -48,13 +48,8 @@ async function commitStage(
   write: (tx: Tx) => Promise<StageOutcome>,
 ): Promise<StageOutcome> {
   return ctx.sql.begin(async (tx) => {
-    const locked = await tx<JobRow[]>`select * from public.jobs where id = ${job.id} for update`;
-    const j = locked[0];
-    if (!j || j.state !== 'running' || j.worker_id !== ctx.config.workerId) throw new StaleJobError('job lost its lease before commit');
-    const owner = await tx<{ deletion_generation: number; account_state: string }[]>`select deletion_generation, account_state from public.profiles where id = ${job.user_id}`;
-    if (!owner[0] || owner[0].account_state !== 'active' || owner[0].deletion_generation !== job.generation) {
-      throw new StaleJobError('owner is deleting or generation changed');
-    }
+    // Lock order: attempt, then job (deletion locks the attempt first too), so
+    // a delete racing a commit never deadlocks.
     if (checks.attemptId) {
       const a = await tx<{ deleted_at: Date | null; current_revision: number; deletion_generation: number }[]>`
         select deleted_at, current_revision, deletion_generation from public.attempts where id = ${checks.attemptId} for update`;
@@ -62,6 +57,13 @@ async function commitStage(
       if (checks.revision !== undefined && checks.revision !== null && a[0].current_revision !== checks.revision) {
         throw new StaleJobError('transcript revision superseded');
       }
+    }
+    const locked = await tx<JobRow[]>`select * from public.jobs where id = ${job.id} for update`;
+    const j = locked[0];
+    if (!j || j.state !== 'running' || j.worker_id !== ctx.config.workerId) throw new StaleJobError('job lost its lease before commit');
+    const owner = await tx<{ deletion_generation: number; account_state: string }[]>`select deletion_generation, account_state from public.profiles where id = ${job.user_id}`;
+    if (!owner[0] || owner[0].account_state !== 'active' || owner[0].deletion_generation !== job.generation) {
+      throw new StaleJobError('owner is deleting or generation changed');
     }
     const outcome = await write(tx);
     const done = await tx<{ complete_job: boolean }[]>`
@@ -261,6 +263,7 @@ export async function handleRewrite(ctx: ServerContext, job: JobRow): Promise<St
     verification: unknown;
     signals: unknown;
     candidateEvaluationId: string | null;
+    candidate: { evaluation: unknown; totals: unknown; status: string; model: string; template: string; latency: number; ordinal: number } | null;
     label: 'stronger_version' | 'another_way' | null;
     error: { code: string; message: string } | null;
   };
@@ -272,7 +275,13 @@ export async function handleRewrite(ctx: ServerContext, job: JobRow): Promise<St
 
   while (final === null && generationAttempts < maxGenerations) {
     generationAttempts += 1;
-    const hint = lastFailure ? `Previous rewrite was rejected (${lastFailure.code}): ${lastFailure.message}. Preserve only facts present in the transcript; do not add people, reactions, numbers, or new feelings.` : undefined;
+    const repair = lastFailure
+      ? {
+          code: lastFailure.code,
+          note: 'The previous rewrite was rejected. Preserve only facts present in the confirmed transcript; do not add people, reactions, numbers, places, or new feelings. Cite exact substrings for preserved facts.',
+          details: { message: lastFailure.message },
+        }
+      : undefined;
     const generated = await ctx.providers.rewriter.rewrite(
       {
         framework: fw.config,
@@ -286,7 +295,7 @@ export async function handleRewrite(ctx: ServerContext, job: JobRow): Promise<St
         fictional,
         scenario_context: fictional ? promptEntry.seed.prompt : null,
       },
-      { timeoutMs: ctx.config.TIMEOUT_REWRITE_MS, ...(hint ? { repairHint: hint } : {}) },
+      { timeoutMs: ctx.config.TIMEOUT_REWRITE_MS, ...(repair ? { repair } : {}) },
     );
     await saveCheckpoint(ctx.sql, job, { generation_attempts: generationAttempts });
     const structural = validateRewrite(generated.raw, rewriteCtx);
@@ -305,6 +314,7 @@ export async function handleRewrite(ctx: ServerContext, job: JobRow): Promise<St
         verification: null,
         signals: null,
         candidateEvaluationId: null,
+        candidate: null,
         label: null,
         error: null,
       };
@@ -334,6 +344,7 @@ export async function handleRewrite(ctx: ServerContext, job: JobRow): Promise<St
         verification: verification.value,
         signals,
         candidateEvaluationId: null,
+        candidate: null,
         label: null,
         error: null,
       };
@@ -344,7 +355,7 @@ export async function handleRewrite(ctx: ServerContext, job: JobRow): Promise<St
       continue;
     }
     // Independent re-evaluation of the candidate with the same rubric and evidence rules.
-    let candidateEvaluationId: string | null = null;
+    let candidateRow: Final['candidate'] = null;
     let label: 'stronger_version' | 'another_way' | null = 'another_way';
     try {
       const candidate = await evaluateSubject(ctx, {
@@ -367,15 +378,15 @@ export async function handleRewrite(ctx: ServerContext, job: JobRow): Promise<St
         continue;
       }
       label = verdict.label;
-      const inserted = await ctx.sql<{ id: string }[]>`
-        insert into public.evaluations (user_id, attempt_id, transcript_revision, kind, candidate_ordinal, config_version, model_id, prompt_template_version,
-          rubric_version, framework_id, result, totals, status, source_copy_flag, is_guided_retry, provider_meta)
-        values (${attempt.user_id}, ${attempt.id}, ${rewrite.transcript_revision}, 'rewrite_candidate', ${generationAttempts}, ${rewrite.config_version}, ${candidate.meta.model},
-          ${candidate.meta.prompt_template_version}, ${fw.config.rubric_version}, ${fw.config.id}, ${ctx.sql.json(candidate.evaluation as never)}, ${ctx.sql.json(candidate.totals as never)},
-          ${candidate.evaluation.status}, null, false, ${ctx.sql.json({ latency_ms: candidate.meta.latency_ms } as never)})
-        on conflict (attempt_id, transcript_revision, config_version, kind, candidate_ordinal) do update set id = public.evaluations.id
-        returning id`;
-      candidateEvaluationId = inserted[0]!.id;
+      candidateRow = {
+        evaluation: candidate.evaluation,
+        totals: candidate.totals,
+        status: candidate.evaluation.status,
+        model: candidate.meta.model,
+        template: candidate.meta.prompt_template_version,
+        latency: candidate.meta.latency_ms,
+        ordinal: generationAttempts,
+      };
     } catch (err) {
       if (err instanceof InvalidModelOutputError) {
         label = 'another_way'; // cannot prove improvement without a valid candidate evaluation
@@ -391,7 +402,8 @@ export async function handleRewrite(ctx: ServerContext, job: JobRow): Promise<St
       factCheck: 'passed',
       verification: verification.value,
       signals,
-      candidateEvaluationId,
+      candidateEvaluationId: null,
+      candidate: candidateRow,
       label,
       error: null,
     };
@@ -408,16 +420,30 @@ export async function handleRewrite(ctx: ServerContext, job: JobRow): Promise<St
       verification: null,
       signals: null,
       candidateEvaluationId: null,
+      candidate: null,
       label: null,
       error: lastFailure,
     };
   }
   const done = final;
   return commitStage(ctx, job, { attemptId: attempt.id, revision: rewrite.transcript_revision }, async (tx) => {
+    let candidateEvaluationId: string | null = done.candidateEvaluationId;
+    if (done.candidate) {
+      // Written inside the commit guard so a deleted attempt or superseded revision never gains a candidate row.
+      const inserted = await tx<{ id: string }[]>`
+        insert into public.evaluations (user_id, attempt_id, transcript_revision, kind, candidate_ordinal, config_version, model_id, prompt_template_version,
+          rubric_version, framework_id, result, totals, status, source_copy_flag, is_guided_retry, provider_meta)
+        values (${attempt.user_id}, ${attempt.id}, ${rewrite.transcript_revision}, 'rewrite_candidate', ${done.candidate.ordinal}, ${rewrite.config_version}, ${done.candidate.model},
+          ${done.candidate.template}, ${fw.config.rubric_version}, ${fw.config.id}, ${tx.json(done.candidate.evaluation as never)}, ${tx.json(done.candidate.totals as never)},
+          ${done.candidate.status}, null, false, ${tx.json({ latency_ms: done.candidate.latency } as never)})
+        on conflict (attempt_id, transcript_revision, config_version, kind, candidate_ordinal) do update set id = public.evaluations.id
+        returning id`;
+      candidateEvaluationId = inserted[0]!.id;
+    }
     await tx`
       update public.rewrites set status = ${done.status}, result = ${done.result ? tx.json(done.result as never) : null}, rewrite_text = ${done.text},
         question_for_user = ${done.question}, fact_check_state = ${done.factCheck}, verification = ${done.verification ? tx.json(done.verification as never) : null},
-        fact_signals = ${done.signals ? tx.json(done.signals as never) : null}, candidate_evaluation_id = ${done.candidateEvaluationId}, improvement_label = ${done.label},
+        fact_signals = ${done.signals ? tx.json(done.signals as never) : null}, candidate_evaluation_id = ${candidateEvaluationId}, improvement_label = ${done.label},
         generation_attempts = ${generationAttempts}, error = ${done.error ? tx.json(done.error as never) : null}, updated_at = now()
       where id = ${rewrite.id}`;
     if (done.status === 'ready') {
@@ -522,7 +548,7 @@ export async function handleRoleplayEvaluate(ctx: ServerContext, job: JobRow): P
   if (state.session_evaluation_id) {
     return commitStage(ctx, job, {}, async () => ({ resultId: state.session_evaluation_id, resultKind: 'evaluation' }));
   }
-  const completed = state.exchanges.filter((e) => e.partner_reply !== null);
+  const completed = state.exchanges.filter((e) => e.partner_reply !== null && !e.deleted && e.learner_text.length > 0);
   const last = completed.at(-1);
   if (!last) throw new StaleJobError('no completed exchange');
   const attempt = await loadAttempt(ctx.sql, last.attempt_id);
@@ -593,6 +619,13 @@ export async function handleDeleteAttempt(ctx: ServerContext, job: JobRow): Prom
   await ctx.storage.remove(assets.map((a) => a.object_key));
   await ctx.sql.begin(async (tx) => {
     await tx`update public.audio_assets set storage_deleted_at = now(), state = 'deleted', deleted_at = coalesce(deleted_at, now()), updated_at = now() where attempt_id = ${attemptId}`;
+    // Private text also lives in job checkpoints/payloads and roleplay state; scrub both.
+    await tx`update public.jobs set checkpoint = '{}'::jsonb, payload = '{}'::jsonb, error_message = null, updated_at = now() where attempt_id = ${attemptId} and id <> ${job.id}`;
+    await tx`
+      update public.practice_sessions s set roleplay_state = jsonb_set(s.roleplay_state, '{exchanges}', (
+          select coalesce(jsonb_agg(case when e->>'attempt_id' = ${attemptId} then e || '{"learner_text":"","deleted":true}'::jsonb else e end order by (e->>'exchange')::int), '[]'::jsonb)
+            from jsonb_array_elements(s.roleplay_state->'exchanges') e)), updated_at = now()
+       where s.id = (select session_id from public.attempts where id = ${attemptId}) and s.roleplay_state is not null`;
     await tx`delete from public.reports where evaluation_id in (select id from public.evaluations where attempt_id = ${attemptId})`;
     await tx`update public.rewrites set candidate_evaluation_id = null where attempt_id = ${attemptId}`;
     await tx`delete from public.audio_assets where attempt_id = ${attemptId}`;
