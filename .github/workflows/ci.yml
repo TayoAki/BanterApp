@@ -1,0 +1,45 @@
+name: ci
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: marshmemos_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm content:validate
+      - run: python3 handoff/scripts/validate_handoff.py
+      - name: Database-backed server tests (migrations, RLS, quota, jobs, API journey)
+        run: pnpm --filter @marshmemos/server test:db
+        env:
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/marshmemos_test
+      - name: Expo config and bundle
+        working-directory: apps/mobile
+        env:
+          CI: '1'
+          EXPO_NO_TELEMETRY: '1'
+        run: |
+          npx expo config --type introspect > /dev/null
+          npx expo export --platform ios --output-dir /tmp/expo-export-ios
