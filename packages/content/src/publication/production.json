@@ -1,8 +1,462 @@
 {
   "manifest": "production",
-  "note": "Public publication requires curriculum review and a source-rights decision. Nothing is published until the owner lists reviewed IDs here. Learners see only entries with status published; drafts require server-held editor capability.",
-  "frameworks": {},
-  "prompts": {},
-  "lessons": {},
-  "examples": {}
+  "note": "Published at the owner's request on 2026-09-20 so pilot testers have the full curriculum: 10 frameworks, 30 lessons, 30 daily prompts and the 20 source examples the lessons quote verbatim. The formal curriculum review and the source-rights decision for quoting the framework PDFs remain open items recorded in PLAN.md; set an entry to retired (or remove it) to pull content without a code change. Learners see only entries with status published; drafts require server-held editor capability.",
+  "frameworks": {
+    "F01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F05": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F06": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F10": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F08": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F07": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F11": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F12": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    }
+  },
+  "prompts": {
+    "F01-P01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F01-P02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F01-P03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F02-P01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F02-P02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F02-P03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F05-P01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F05-P02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F05-P03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F06-P01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F06-P02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F06-P03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F03-P01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F03-P02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F03-P03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F10-P01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F10-P02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F10-P03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F08-P01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F08-P02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F08-P03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F07-P01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F07-P02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F07-P03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F11-P01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F11-P02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F11-P03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F12-P01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F12-P02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F12-P03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    }
+  },
+  "lessons": {
+    "F01-L01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F01-L02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F01-L03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F02-L01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F02-L02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F02-L03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F05-L01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F05-L02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F05-L03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F06-L01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F06-L02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F06-L03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F03-L01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F03-L02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F03-L03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F10-L01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F10-L02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F10-L03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F08-L01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F08-L02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F08-L03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F07-L01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F07-L02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F07-L03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F11-L01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F11-L02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F11-L03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F12-L01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F12-L02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "F12-L03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    }
+  },
+  "examples": {
+    "E01-01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E02-01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E03-01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E03-02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E03-03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E03-04": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E03-05": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E03-06": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E05-01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E06-01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E06-02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E06-03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E06-04": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E07-01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E08-01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E10-01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E11-01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E11-02": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E11-03": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    },
+    "E12-01": {
+      "status": "published",
+      "reviewed_by": "owner",
+      "reviewed_at": "2026-09-20"
+    }
+  }
 }

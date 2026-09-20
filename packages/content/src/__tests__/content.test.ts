@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { checkContentIntegrity } from '../integrity.js';
 import { compareByCurriculum, CURRICULUM_ORDER, nextUnlockedFramework } from '../curriculum.js';
-import { frameworkNumber, frameworks, lessons, prompts } from '../load.js';
+import { corpus, frameworkNumber, frameworks, lessons, prompts } from '../load.js';
 import { effectiveStatus, loadManifest, visibleTo } from '../publication.js';
 import { recognitionTasks } from '../recognition.js';
 
@@ -59,14 +59,27 @@ describe('curriculum', () => {
 });
 
 describe('publication', () => {
-  it('production hides every draft seed from learners and shows it to editors', () => {
-    const m = loadManifest('production');
+  it('a seed without a manifest entry stays a draft: hidden from learners, visible to editors', () => {
+    const m = { ...loadManifest('production'), frameworks: {}, prompts: {}, lessons: {}, examples: {} };
     for (const p of prompts) {
       const status = effectiveStatus(m, 'prompts', p.id, p.publication_status);
       expect(status).toBe('draft');
       expect(visibleTo({ editor: false }, status)).toBe(false);
       expect(visibleTo({ editor: true }, status)).toBe(true);
     }
+  });
+
+  it('the production manifest publishes exactly the shipped seeds (no dangling or missing IDs)', () => {
+    const m = loadManifest('production');
+    expect(m.publish_all_drafts).toBeUndefined();
+    expect(Object.keys(m.frameworks).sort()).toEqual(frameworks.map((f) => f.id).sort());
+    expect(Object.keys(m.prompts).sort()).toEqual(prompts.map((p) => p.id).sort());
+    expect(Object.keys(m.lessons).sort()).toEqual(lessons.map((l) => l.id).sort());
+    expect(Object.keys(m.examples).sort()).toEqual(corpus.examples.map((e) => e.example_id).sort());
+    for (const kind of ['frameworks', 'prompts', 'lessons', 'examples'] as const) {
+      for (const entry of Object.values(m[kind])) expect(['published', 'retired']).toContain(entry.status);
+    }
+    expect(m.note).toMatch(/rights/);
   });
 
   it('development preview publishes drafts but is labeled as such', () => {
