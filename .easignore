@@ -1,0 +1,9 @@
+# Files EAS Build does not need to upload (the mobile app only depends on apps/mobile and packages/*).
+handoff/
+apps/server/
+docs/
+tests/
+supabase/
+**/node_modules/
+**/dist/
+**/.expo/
