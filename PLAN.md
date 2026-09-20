@@ -114,8 +114,13 @@ text models, Gemini for speech. What changed and what was observed:
   and `TTS_MODEL` are configuration so the first live call can correct them without a code change.
 - **Container**: `apps/server/Dockerfile` (multi-stage, pnpm 10.33.0, server-only install, esbuild bundle that
   inlines the workspace packages and copies prompts/migrations/auth stub next to `dist/`). Migrations run under a
-  transaction-scoped advisory lock so `api` and `worker` can start together. `docker build` was **not run here**
-  (no daemon in the container); the first Railway build is the verification.
+  transaction-scoped advisory lock so `api` and `worker` can start together. No Docker daemon exists in this
+  container; the first Railway build (commit `2a13884`) was the verification: image built in about 40 s
+  (`pnpm install --filter @marshmemos/server...` 3.9 s, bundle built, 304 MB image pushed), the container started
+  and exited with exactly the config guard `Refusing to start: TEXT_AI_API_KEY is required ...; AUDIO_AI_API_KEY is
+  required ...; AUTH_JWT_SECRET is required when AUTH_MODE=password`. The database and bucket references were not
+  in that list, so `${{Postgres.DATABASE_URL}}` and `${{practice-audio.*}}` resolved. The health check then
+  failed as designed; the three values below are the only remaining inputs.
 - **Railway provisioning (done through the Railway MCP)**: project `marshmemos` (id `f3d2b4d8-c9e7-4bc0-a130-ed7ce3009e69`,
   environment `production` `2dee1074-8e14-4464-a381-8220313f5e5e`), `Postgres` (template `postgres-ssl:18`, volume 50 GB),
   bucket `practice-audio` (region sjc), services `api` (`da5e446a-456f-4534-b9a9-f45d3e23f143`, healthcheck `/healthz`,
