@@ -23,6 +23,8 @@ describe('handoff packet and repository shape', () => {
       'supabase/migrations/20260919000000_init.sql',
       'supabase/migrations/20260919000100_functions.sql',
       'supabase/migrations/20260919000200_rls.sql',
+      'supabase/migrations/20260919000300_password_auth.sql',
+      'apps/server/Dockerfile',
       '.env.example',
       'PLAN.md',
       'CLAUDE.md',

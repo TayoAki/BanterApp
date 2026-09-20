@@ -229,3 +229,76 @@ export function probeAudio(buf: Buffer): MediaProbe {
   if (buf.length >= 3 && (buf.toString('latin1', 0, 3) === 'ID3' || (buf[0] === 0xff && (buf[1]! & 0xe0) === 0xe0))) return probeMp3(buf);
   throw new MediaProbeError('unsupported_container', 'Unrecognized audio container. Record M4A/AAC audio.');
 }
+
+// ---------------------------------------------------------------------------
+// WAV (RIFF/PCM) — produced by the Gemini speech adapter, never accepted as a
+// learner upload (uploads must be M4A/AAC or MP3; see probeAudio).
+// ---------------------------------------------------------------------------
+
+export interface WavProbe {
+  container: 'wav';
+  duration_seconds: number;
+  codec: 'pcm';
+  channels: number;
+  sample_rate: number;
+  bits_per_sample: number;
+}
+
+export function probeWav(buf: Buffer): WavProbe {
+  if (buf.length < 44 || buf.toString('latin1', 0, 4) !== 'RIFF' || buf.toString('latin1', 8, 12) !== 'WAVE') {
+    throw new MediaProbeError('unsupported_container', 'Not a RIFF/WAVE file.');
+  }
+  let offset = 12;
+  let fmt: { channels: number; sampleRate: number; bitsPerSample: number } | null = null;
+  let dataBytes: number | null = null;
+  while (offset + 8 <= buf.length) {
+    const id = buf.toString('latin1', offset, offset + 4);
+    const size = buf.readUInt32LE(offset + 4);
+    const body = offset + 8;
+    if (id === 'fmt ') {
+      if (body + 16 > buf.length) throw new MediaProbeError('malformed', 'Truncated fmt chunk.');
+      const format = buf.readUInt16LE(body);
+      if (format !== 1 && format !== 0xfffe) throw new MediaProbeError('unsupported_container', `WAV format ${format} is not PCM.`);
+      fmt = { channels: buf.readUInt16LE(body + 2), sampleRate: buf.readUInt32LE(body + 4), bitsPerSample: buf.readUInt16LE(body + 14) };
+    } else if (id === 'data') {
+      dataBytes = Math.min(size, buf.length - body);
+      break;
+    }
+    offset = body + size + (size % 2);
+  }
+  if (!fmt || dataBytes === null) throw new MediaProbeError('malformed', 'WAV file has no fmt or data chunk.');
+  const bytesPerSecond = fmt.channels * fmt.sampleRate * (fmt.bitsPerSample / 8);
+  if (bytesPerSecond <= 0) throw new MediaProbeError('malformed', 'WAV format has zero rate.');
+  return { container: 'wav', duration_seconds: dataBytes / bytesPerSecond, codec: 'pcm', channels: fmt.channels, sample_rate: fmt.sampleRate, bits_per_sample: fmt.bitsPerSample };
+}
+
+/** Duration probe for server-generated speech (MP3 from OpenAI, WAV from Gemini). */
+export function probeGeneratedAudio(buf: Buffer): { duration_seconds: number; container: 'mp4' | 'mp3' | 'wav' } {
+  if (buf.length >= 12 && buf.toString('latin1', 0, 4) === 'RIFF' && buf.toString('latin1', 8, 12) === 'WAVE') {
+    const p = probeWav(buf);
+    return { duration_seconds: p.duration_seconds, container: p.container };
+  }
+  const p = probeAudio(buf);
+  return { duration_seconds: p.duration_seconds, container: p.container };
+}
+
+/** Wraps raw little-endian PCM samples in a 44-byte WAV header. */
+export function pcmToWav(pcm: Buffer, opts: { sampleRate: number; channels: number; bitsPerSample: number }): Buffer {
+  const blockAlign = opts.channels * (opts.bitsPerSample / 8);
+  const byteRate = opts.sampleRate * blockAlign;
+  const header = Buffer.alloc(44);
+  header.write('RIFF', 0, 'latin1');
+  header.writeUInt32LE(36 + pcm.length, 4);
+  header.write('WAVE', 8, 'latin1');
+  header.write('fmt ', 12, 'latin1');
+  header.writeUInt32LE(16, 16);
+  header.writeUInt16LE(1, 20); // PCM
+  header.writeUInt16LE(opts.channels, 22);
+  header.writeUInt32LE(opts.sampleRate, 24);
+  header.writeUInt32LE(byteRate, 28);
+  header.writeUInt16LE(blockAlign, 32);
+  header.writeUInt16LE(opts.bitsPerSample, 34);
+  header.write('data', 36, 'latin1');
+  header.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([header, pcm]);
+}

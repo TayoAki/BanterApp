@@ -169,7 +169,7 @@ export interface EntitlementProvider {
 }
 
 export interface Providers {
-  mode: 'openai' | 'fixture';
+  mode: 'live' | 'fixture';
   transcriber: Transcriber;
   evaluator: FrameworkEvaluator;
   rewriter: Rewriter;

@@ -22,7 +22,7 @@ export interface ObjectInfo {
 }
 
 export interface ObjectStorage {
-  readonly kind: 'supabase' | 'local';
+  readonly kind: 's3' | 'supabase' | 'local';
   createSignedUpload(objectKey: string, opts: { contentType: string; ttlSeconds: number }): Promise<SignedUpload>;
   head(objectKey: string): Promise<ObjectInfo | null>;
   download(objectKey: string): Promise<Buffer>;
@@ -40,8 +40,19 @@ export function rawAudioKey(userId: string, attemptId: string, assetId: string):
   return `users/${userId}/attempts/${attemptId}/raw/${assetId}.m4a`;
 }
 
-export function ttsAudioKey(userId: string, attemptId: string, rewriteId: string, assetId: string): string {
-  return `users/${userId}/attempts/${attemptId}/tts/${rewriteId}/${assetId}.mp3`;
+export function ttsAudioKey(userId: string, attemptId: string, rewriteId: string, assetId: string, mime = 'audio/mpeg'): string {
+  return `users/${userId}/attempts/${attemptId}/tts/${rewriteId}/${assetId}.${extensionForMime(mime)}`;
+}
+
+/** File extension for the audio formats the adapters produce or accept. */
+export function extensionForMime(mime: string): string {
+  const m = mime.toLowerCase().split(';')[0]!.trim();
+  if (m === 'audio/mpeg' || m === 'audio/mp3') return 'mp3';
+  if (m === 'audio/wav' || m === 'audio/x-wav' || m === 'audio/wave') return 'wav';
+  if (m === 'audio/mp4' || m === 'audio/x-m4a' || m === 'audio/m4a') return 'm4a';
+  if (m === 'audio/aac') return 'aac';
+  if (m === 'audio/ogg') return 'ogg';
+  return 'bin';
 }
 
 export function ownerOfKey(objectKey: string): string | null {

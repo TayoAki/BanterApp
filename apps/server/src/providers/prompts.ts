@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -9,7 +9,8 @@ import { fileURLToPath } from 'node:url';
  * instructions; they travel as structured input.
  */
 const here = path.dirname(fileURLToPath(import.meta.url));
-const PROMPTS_DIR = path.resolve(here, '../../prompts');
+// Source layout: apps/server/src/providers -> apps/server/prompts. Bundle layout: apps/server/dist -> dist/prompts (copied by the build).
+const PROMPTS_DIR = [path.resolve(here, 'prompts'), path.resolve(here, '../../prompts')].find((p) => existsSync(p)) ?? path.resolve(here, '../../prompts');
 
 function extractTextBlock(markdown: string, file: string): string {
   const m = /```text\r?\n([\s\S]*?)```/.exec(markdown);

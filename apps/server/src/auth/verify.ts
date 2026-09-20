@@ -8,12 +8,15 @@ export interface VerifiedIdentity {
   /** Seconds since epoch when the session token was issued, for recent-auth checks. */
   issuedAt: number | null;
   authTime: number | null;
-  mode: 'supabase' | 'fixture';
+  mode: 'password' | 'supabase' | 'fixture';
 }
 
 export interface TokenVerifier {
   verify(bearerToken: string): Promise<VerifiedIdentity>;
 }
+
+/** Issuer and audience of server-issued (password mode) access tokens. */
+export const PASSWORD_TOKEN_ISSUER = 'marshmemos';
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -106,8 +109,47 @@ export function createFixtureVerifier(config: ServerConfig): TokenVerifier {
   };
 }
 
+/**
+ * Verifies access tokens issued by this server's password auth (HS256 with
+ * AUTH_JWT_SECRET, issuer and audience `marshmemos`). `auth_time` is the
+ * moment the password was last proven and survives refreshes, so
+ * recent-auth checks stay meaningful.
+ */
+export function createPasswordVerifier(config: ServerConfig): TokenVerifier {
+  if (!config.AUTH_JWT_SECRET) throw new Error('AUTH_JWT_SECRET is required for the password token verifier');
+  const secret = new TextEncoder().encode(config.AUTH_JWT_SECRET);
+  return {
+    async verify(token) {
+      let payload: JWTPayload;
+      try {
+        ({ payload } = await jwtVerify(token, secret, { issuer: PASSWORD_TOKEN_ISSUER, audience: PASSWORD_TOKEN_ISSUER, algorithms: ['HS256'] }));
+      } catch {
+        throw ApiError.unauthenticated('Session is invalid or expired.');
+      }
+      if (!isUuid(payload.sub)) throw ApiError.unauthenticated('Session has no valid subject.');
+      if ((payload as { role?: unknown }).role !== 'authenticated') throw ApiError.unauthenticated('Session role not accepted.');
+      const email = typeof (payload as { email?: unknown }).email === 'string' ? (payload as { email: string }).email : null;
+      const authTime = (payload as { auth_time?: unknown }).auth_time;
+      return {
+        userId: payload.sub.toLowerCase(),
+        email,
+        issuedAt: payload.iat ?? null,
+        authTime: typeof authTime === 'number' && Number.isFinite(authTime) ? authTime : null,
+        mode: 'password',
+      };
+    },
+  };
+}
+
 export function createVerifier(config: ServerConfig): TokenVerifier {
-  return config.AUTH_MODE === 'fixture' ? createFixtureVerifier(config) : createSupabaseVerifier(config);
+  switch (config.AUTH_MODE) {
+    case 'fixture':
+      return createFixtureVerifier(config);
+    case 'password':
+      return createPasswordVerifier(config);
+    default:
+      return createSupabaseVerifier(config);
+  }
 }
 
 export function extractBearer(header: string | undefined | null): string | null {

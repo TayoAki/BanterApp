@@ -121,7 +121,7 @@ export default function Settings() {
 
       <Card>
         <Body style={{ fontWeight: '700' }}>Account</Body>
-        <Label>{email ?? (mode === 'development' ? 'Development identity' : 'Signed in')}</Label>
+        <Label>{email ?? (mode === 'fixture' ? 'Development identity' : 'Signed in')}</Label>
         <Label>Timezone: {p?.timezone ?? '…'} (device: {deviceTimeZone()})</Label>
         {p && p.timezone !== deviceTimeZone() ? <Button title="Use device timezone" variant="ghost" onPress={() => save.mutate({ timezone: deviceTimeZone() })} /> : null}
         <Button title="Sign out" variant="secondary" onPress={() => void signOut().then(() => router.replace('/welcome'))} />

@@ -24,3 +24,10 @@ export class LocalAccountAdmin implements AccountAdmin {
     await this.sql`delete from auth.users where id = ${userId}`;
   }
 }
+
+/**
+ * Server-managed accounts (AUTH_MODE=password): deleting the auth.users row
+ * cascades to credentials and refresh sessions, so no further access is
+ * possible once the deletion job commits.
+ */
+export class PasswordAccountAdmin extends LocalAccountAdmin {}

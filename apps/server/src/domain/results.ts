@@ -173,7 +173,17 @@ export async function rewriteDto(ctx: ServerContext, row: RewriteRow): Promise<R
   };
 }
 
-const SUPPORTED_VOICES = new Set(['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar']);
+/** Standard provider voice presets (no cloning). The configured default is always accepted. */
+const OPENAI_VOICES = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse', 'marin', 'cedar'];
+const GEMINI_VOICES = [
+  'Zephyr', 'Puck', 'Charon', 'Kore', 'Fenrir', 'Leda', 'Orus', 'Aoede', 'Callirrhoe', 'Autonoe', 'Enceladus', 'Iapetus', 'Umbriel', 'Algieba', 'Despina',
+  'Erinome', 'Algenib', 'Rasalgethi', 'Laomedeia', 'Achernar', 'Alnilam', 'Schedar', 'Gacrux', 'Pulcherrima', 'Achird', 'Zubenelgenubi', 'Vindemiatrix', 'Sadachbia', 'Sadaltager', 'Sulafat',
+];
+
+export function supportedVoices(ctx: ServerContext): Set<string> {
+  const list = ctx.config.AUDIO_AI_PROVIDER === 'gemini' ? GEMINI_VOICES : OPENAI_VOICES;
+  return new Set([...list, ctx.config.TTS_VOICE]);
+}
 
 /**
  * POST /rewrites/:id/speech: returns the existing authorized asset or queues
@@ -186,7 +196,7 @@ export async function requestSpeech(ctx: ServerContext, actor: Actor, rewriteId:
   const attempt = await getOwnedAttempt(ctx, actor.userId, rewrite.attempt_id);
   if (attempt.current_revision !== rewrite.transcript_revision) throw ApiError.conflict('This rewrite is for an older transcript revision.');
   const chosenVoice = voice ?? ctx.config.TTS_VOICE;
-  if (!SUPPORTED_VOICES.has(chosenVoice)) throw ApiError.validation('Unsupported voice preset.');
+  if (!supportedVoices(ctx).has(chosenVoice)) throw ApiError.validation('Unsupported voice preset.');
 
   const ready = (
     await ctx.sql<AudioAssetRow[]>`

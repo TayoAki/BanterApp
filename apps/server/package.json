@@ -15,9 +15,12 @@
     "migrate": "tsx src/db/migrate.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1136.0",
+    "@aws-sdk/s3-request-presigner": "^3.1136.0",
+    "@google/genai": "^2.23.0",
     "@hono/node-server": "^2.1.1",
-    "@marshmemos/contracts": "workspace:*",
     "@marshmemos/content": "workspace:*",
+    "@marshmemos/contracts": "workspace:*",
     "@supabase/supabase-js": "^2.116.0",
     "hono": "^4.13.8",
     "jose": "^6.2.12",

@@ -18,7 +18,7 @@ import { recordEvidence } from '../domain/progress.js';
 import type { EvaluationRow, RewriteRow } from '../domain/results.js';
 import { markSessionCompleted, type RoleplayState, type SessionRow } from '../domain/sessions.js';
 import { recordServerEvent } from '../domain/telemetry.js';
-import { probeAudio } from '../media/mp4.js';
+import { probeAudio, probeGeneratedAudio } from '../media/mp4.js';
 import { ttsAudioKey } from '../storage/types.js';
 import { evaluateSubject, frameworkOrThrow, InvalidModelOutputError } from './pipeline.js';
 
@@ -481,13 +481,13 @@ export async function handleSpeech(ctx: ServerContext, job: JobRow): Promise<Sta
   if (!(assetId && objectKey && (await ctx.storage.head(objectKey)))) {
     const speech = await ctx.providers.speech.synthesize({ text, voice }, { timeoutMs: ctx.config.TIMEOUT_TTS_MS });
     assetId = crypto.randomUUID();
-    objectKey = ttsAudioKey(attempt.user_id, attempt.id, rewrite.id, assetId);
+    objectKey = ttsAudioKey(attempt.user_id, attempt.id, rewrite.id, assetId, speech.mime);
     await ctx.storage.upload(objectKey, speech.bytes, speech.mime);
     mime = speech.mime;
     bytesLen = speech.bytes.length;
     model = speech.model;
     try {
-      duration = probeAudio(speech.bytes).duration_seconds;
+      duration = probeGeneratedAudio(speech.bytes).duration_seconds;
     } catch {
       duration = null;
     }

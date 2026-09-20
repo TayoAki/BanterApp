@@ -1,6 +1,7 @@
 import OpenAI, { toFile } from 'openai';
 import { SCHEMAS, toProviderStrictSchema } from '@marshmemos/contracts';
 import type { ServerConfig } from '../config.js';
+import { classifyProviderError as classify } from './classify.js';
 import { DATA_ENVELOPE_NOTE, PROMPT_TEMPLATES } from './prompts.js';
 import {
   ProviderError,
@@ -19,38 +20,42 @@ import {
 } from './types.js';
 
 /**
- * OpenAI adapters. Model IDs come from server configuration. Structured
- * calls use the Responses API with a strict JSON schema translated from the
- * local authoritative contracts; the pipeline still validates every field.
+ * OpenAI-compatible adapters. Model IDs come from server configuration.
+ * Structured calls use either the Responses API (OpenAI) or Chat Completions
+ * with `response_format: json_schema` (OpenRouter and other compatible
+ * gateways); both carry a strict JSON schema translated from the local
+ * authoritative contracts, and the pipeline still validates every field.
  * Refusals, incomplete outputs and unparseable text are distinct errors,
  * never treated as evaluations.
  */
 
-function classify(err: unknown): ProviderError {
-  if (err instanceof ProviderError) return err;
-  const anyErr = err as { status?: number; code?: string; message?: string; headers?: Record<string, string> | Headers; name?: string };
-  const message = anyErr?.message ?? String(err);
-  if (anyErr?.name === 'AbortError' || /timed? ?out/i.test(message)) return new ProviderError('timeout', `Provider timeout: ${message}`, { billingUncertain: true });
-  const status = anyErr?.status;
-  if (status === 429) {
-    let retryAfterMs: number | null = null;
-    const h = anyErr.headers;
-    const ra = h instanceof Headers ? h.get('retry-after') : h?.['retry-after'];
-    if (ra && Number.isFinite(Number(ra))) retryAfterMs = Number(ra) * 1000;
-    return new ProviderError('rate_limited', 'Provider rate limit.', { retryAfterMs });
-  }
-  if (status === 401 || status === 403) return new ProviderError('denied', 'Provider access denied.');
-  if (status === 400 || status === 404 || status === 413 || status === 415 || status === 422) return new ProviderError('bad_input', `Provider rejected input (${status}).`);
-  if (status !== undefined && status >= 500) return new ProviderError('transient', `Provider error ${status}.`, { billingUncertain: true });
-  if (/ECONNRESET|ETIMEDOUT|EAI_AGAIN|fetch failed|network/i.test(message)) return new ProviderError('transient', `Network error: ${message}`, { billingUncertain: true });
-  return new ProviderError('transient', message, { billingUncertain: true });
+export type TextApiStyle = 'chat' | 'responses';
+
+export interface TextClient {
+  client: OpenAI;
+  apiStyle: TextApiStyle;
+  provider: 'openrouter' | 'openai';
 }
 
-export function createOpenAIClient(config: ServerConfig): OpenAI {
-  return new OpenAI({
-    apiKey: config.AI_API_KEY ?? '',
-    ...(config.AI_BASE_URL ? { baseURL: config.AI_BASE_URL } : {}),
+/** Text-model client: OpenRouter (chat completions) or OpenAI (Responses API). */
+export function createTextClient(config: ServerConfig, fetchImpl?: typeof fetch): TextClient {
+  const client = new OpenAI({
+    apiKey: config.textApiKey ?? '',
+    ...(config.textBaseUrl ? { baseURL: config.textBaseUrl } : {}),
+    ...(config.TEXT_AI_PROVIDER === 'openrouter' ? { defaultHeaders: { 'HTTP-Referer': 'https://marshmemos.app', 'X-Title': 'marshmemos' } } : {}),
+    ...(fetchImpl ? { fetch: fetchImpl as never } : {}),
     maxRetries: 0, // retries are the worker's job, with recorded budgets
+  });
+  return { client, apiStyle: config.TEXT_AI_API_STYLE, provider: config.TEXT_AI_PROVIDER };
+}
+
+/** Audio client for AUDIO_AI_PROVIDER=openai (transcription + speech). */
+export function createOpenAIAudioClient(config: ServerConfig, fetchImpl?: typeof fetch): OpenAI {
+  return new OpenAI({
+    apiKey: config.audioApiKey ?? '',
+    ...(config.AUDIO_AI_BASE_URL ? { baseURL: config.AUDIO_AI_BASE_URL } : {}),
+    ...(fetchImpl ? { fetch: fetchImpl as never } : {}),
+    maxRetries: 0,
   });
 }
 
@@ -94,7 +99,7 @@ export class OpenAITranscriber implements Transcriber {
 }
 
 async function structuredCall(
-  client: OpenAI,
+  text: TextClient,
   args: { model: string; instructions: string; data: unknown; schemaName: keyof typeof SCHEMAS; timeoutMs: number; templateVersion: string; repair?: RepairRequest | undefined },
 ): Promise<StructuredResult> {
   const started = Date.now();
@@ -102,14 +107,45 @@ async function structuredCall(
   // Only fixed server text enters the instruction channel; repair details ride in the data envelope.
   const instructions = [args.instructions, DATA_ENVELOPE_NOTE, args.repair ? `Repair note (${args.repair.code}): ${args.repair.note}` : null].filter(Boolean).join('\n\n');
   const data = args.repair?.details !== undefined ? { ...(args.data as Record<string, unknown>), repair_context: { code: args.repair.code, details: args.repair.details } } : args.data;
+  const { text: output, model, usage } = text.apiStyle === 'chat'
+    ? await chatCompletionCall(text, { model: args.model, instructions, data, schemaName: args.schemaName, schema, timeoutMs: args.timeoutMs })
+    : await responsesCall(text.client, { model: args.model, instructions, data, schemaName: args.schemaName, schema, timeoutMs: args.timeoutMs });
+  if (!output || output.trim().length === 0) throw new ProviderError('malformed_output', 'Model returned no text output.');
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(output);
+  } catch {
+    throw new ProviderError('malformed_output', 'Model output was not valid JSON.');
+  }
+  return {
+    raw: parsed,
+    meta: {
+      model: model ?? args.model,
+      prompt_template_version: args.templateVersion,
+      ...(usage ? { usage } : {}),
+      latency_ms: Date.now() - started,
+    },
+  };
+}
+
+interface RawStructured {
+  text: string | null;
+  model: string | null;
+  usage: Record<string, unknown> | null;
+}
+
+async function responsesCall(
+  client: OpenAI,
+  args: { model: string; instructions: string; data: unknown; schemaName: string; schema: Record<string, unknown>; timeoutMs: number },
+): Promise<RawStructured> {
   let res: Awaited<ReturnType<OpenAI['responses']['create']>>;
   try {
     res = await client.responses.create(
       {
         model: args.model,
-        instructions,
-        input: [{ role: 'user', content: [{ type: 'input_text', text: JSON.stringify(data) }] }],
-        text: { format: { type: 'json_schema', name: args.schemaName, schema, strict: true } },
+        instructions: args.instructions,
+        input: [{ role: 'user', content: [{ type: 'input_text', text: JSON.stringify(args.data) }] }],
+        text: { format: { type: 'json_schema', name: args.schemaName, schema: args.schema, strict: true } },
         store: false,
         max_output_tokens: 2000,
       },
@@ -129,23 +165,47 @@ async function structuredCall(
       }
     }
   }
-  const text = response.output_text;
-  if (!text || text.trim().length === 0) throw new ProviderError('malformed_output', 'Model returned no text output.');
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    throw new ProviderError('malformed_output', 'Model output was not valid JSON.');
-  }
   return {
-    raw: parsed,
-    meta: {
-      model: response.model ?? args.model,
-      prompt_template_version: args.templateVersion,
-      ...(response.usage ? { usage: { input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens, total_tokens: response.usage.total_tokens } } : {}),
-      latency_ms: Date.now() - started,
-    },
+    text: response.output_text ?? null,
+    model: response.model ?? null,
+    usage: response.usage ? { input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens, total_tokens: response.usage.total_tokens } : null,
   };
+}
+
+/**
+ * Chat Completions with a strict JSON schema response format. On OpenRouter,
+ * `provider.require_parameters` restricts routing to upstreams that honor
+ * `response_format`, so a schema is never silently ignored.
+ */
+async function chatCompletionCall(
+  text: TextClient,
+  args: { model: string; instructions: string; data: unknown; schemaName: string; schema: Record<string, unknown>; timeoutMs: number },
+): Promise<RawStructured> {
+  const body: Record<string, unknown> = {
+    model: args.model,
+    messages: [
+      { role: 'system', content: args.instructions },
+      { role: 'user', content: JSON.stringify(args.data) },
+    ],
+    response_format: { type: 'json_schema', json_schema: { name: args.schemaName, strict: true, schema: args.schema } },
+    max_tokens: 2000,
+    ...(text.provider === 'openrouter' ? { provider: { require_parameters: true } } : {}),
+  };
+  let res: OpenAI.Chat.Completions.ChatCompletion;
+  try {
+    res = await text.client.chat.completions.create(body as unknown as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming, { timeout: args.timeoutMs });
+  } catch (err) {
+    throw classify(err);
+  }
+  const choice = res.choices?.[0];
+  if (!choice) throw new ProviderError('malformed_output', 'Model returned no choices.');
+  if (choice.message.refusal) throw new ProviderError('refusal', `Model refused: ${choice.message.refusal.slice(0, 200)}`);
+  if (choice.finish_reason === 'content_filter') throw new ProviderError('refusal', 'Model output was filtered.');
+  if (choice.finish_reason === 'length') throw new ProviderError('incomplete', 'Model output incomplete (max tokens).');
+  const usage = res.usage
+    ? { input_tokens: res.usage.prompt_tokens, output_tokens: res.usage.completion_tokens, total_tokens: res.usage.total_tokens }
+    : null;
+  return { text: typeof choice.message.content === 'string' ? choice.message.content : null, model: res.model ?? null, usage };
 }
 
 function examplesForModel(examples: EvaluationInput['examples']) {
@@ -163,7 +223,7 @@ function boundedSourceContext(text: string, max = 12_000): string {
 
 export class OpenAIEvaluator implements FrameworkEvaluator {
   constructor(
-    private readonly client: OpenAI,
+    private readonly text: TextClient,
     readonly model: string,
     private readonly templateVersion: string,
   ) {}
@@ -182,7 +242,7 @@ export class OpenAIEvaluator implements FrameworkEvaluator {
       is_guided_retry: input.is_guided_retry,
       ...(input.partner_turns ? { partner_turns: input.partner_turns } : {}),
     };
-    return structuredCall(this.client, {
+    return structuredCall(this.text, {
       model: this.model,
       instructions: PROMPT_TEMPLATES.evaluate,
       data,
@@ -196,7 +256,7 @@ export class OpenAIEvaluator implements FrameworkEvaluator {
 
 export class OpenAIRewriter implements Rewriter {
   constructor(
-    private readonly client: OpenAI,
+    private readonly text: TextClient,
     readonly model: string,
     private readonly templateVersion: string,
   ) {}
@@ -213,7 +273,7 @@ export class OpenAIRewriter implements Rewriter {
       fictional: input.fictional,
       scenario_context: input.scenario_context,
     };
-    return structuredCall(this.client, {
+    return structuredCall(this.text, {
       model: this.model,
       instructions: PROMPT_TEMPLATES.rewrite,
       data,
@@ -227,7 +287,7 @@ export class OpenAIRewriter implements Rewriter {
 
 export class OpenAIVerifier implements RewriteVerifier {
   constructor(
-    private readonly client: OpenAI,
+    private readonly text: TextClient,
     readonly model: string,
     private readonly templateVersion: string,
   ) {}
@@ -241,7 +301,7 @@ export class OpenAIVerifier implements RewriteVerifier {
       fictional: input.fictional,
       scenario_context: input.scenario_context,
     };
-    return structuredCall(this.client, {
+    return structuredCall(this.text, {
       model: this.model,
       instructions: PROMPT_TEMPLATES.verify,
       data,
@@ -254,12 +314,12 @@ export class OpenAIVerifier implements RewriteVerifier {
 
 export class OpenAIPartner implements PartnerModel {
   constructor(
-    private readonly client: OpenAI,
+    private readonly text: TextClient,
     readonly model: string,
     private readonly templateVersion: string,
   ) {}
   async reply(input: PartnerInput, opts: { timeoutMs: number }) {
-    return structuredCall(this.client, {
+    return structuredCall(this.text, {
       model: this.model,
       instructions: PROMPT_TEMPLATES.roleplay,
       data: input,

@@ -1,6 +1,9 @@
 import type {
   AllowanceDto,
   ApiError,
+  AuthCredentialsRequest,
+  AuthRefreshRequest,
+  AuthTokensDto,
   AttemptDto,
   ComparisonResponse,
   ConfirmTranscriptRequest,
@@ -42,13 +45,19 @@ export class ApiClientError extends Error {
 }
 
 export type TokenProvider = () => Promise<string | null>;
+/** Called once on a 401 for an authenticated request; returns a fresh access token or null to give up. */
+export type UnauthorizedHandler = () => Promise<string | null>;
 
 let tokenProvider: TokenProvider = async () => null;
+let unauthorizedHandler: UnauthorizedHandler = async () => null;
 export function setTokenProvider(provider: TokenProvider): void {
   tokenProvider = provider;
 }
+export function setUnauthorizedHandler(handler: UnauthorizedHandler): void {
+  unauthorizedHandler = handler;
+}
 
-async function request<T>(method: string, path: string, body?: unknown, opts: { auth?: boolean; timeoutMs?: number } = {}): Promise<T> {
+async function request<T>(method: string, path: string, body?: unknown, opts: { auth?: boolean; timeoutMs?: number } = {}, retried = false): Promise<T> {
   const headers: Record<string, string> = { accept: 'application/json' };
   if (opts.auth !== false) {
     const token = await tokenProvider();
@@ -69,6 +78,11 @@ async function request<T>(method: string, path: string, body?: unknown, opts: { 
   const text = await res.text();
   const json = text ? safeJson(text) : null;
   if (!res.ok) {
+    if (res.status === 401 && opts.auth !== false && !retried && !path.startsWith('/v1/auth/')) {
+      // Expired access token: refresh once and replay the same request.
+      const fresh = await unauthorizedHandler();
+      if (fresh) return request<T>(method, path, body, opts, true);
+    }
     const e = (json ?? {}) as Partial<ApiError> & { details?: Record<string, unknown> };
     throw new ApiClientError(res.status, e.code ?? `http_${res.status}`, e.message ?? 'Something went wrong.', e.retryable ?? res.status >= 500, e.request_id ?? null, e.details);
   }
@@ -90,6 +104,10 @@ export interface CatalogResponse {
 }
 
 export const api = {
+  register: (body: AuthCredentialsRequest) => request<AuthTokensDto>('POST', '/v1/auth/register', body, { auth: false }),
+  login: (body: AuthCredentialsRequest) => request<AuthTokensDto>('POST', '/v1/auth/login', body, { auth: false }),
+  refreshSession: (body: AuthRefreshRequest) => request<AuthTokensDto>('POST', '/v1/auth/refresh', body, { auth: false }),
+  logout: (body: AuthRefreshRequest) => request<{ ok: boolean }>('POST', '/v1/auth/logout', body, { auth: false }),
   catalog: () => request<CatalogResponse>('GET', '/v1/catalog', undefined, { auth: true }),
   lesson: (id: string) => request<LessonDto>('GET', `/v1/lessons/${encodeURIComponent(id)}`, undefined, { auth: true }),
   today: () => request<TodayResponse>('GET', '/v1/today'),

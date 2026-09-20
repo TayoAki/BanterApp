@@ -65,7 +65,8 @@ export async function createHarness(overrides: Partial<Record<string, string>> =
     now: () => now,
   });
   await prepareDatabase(ctx);
-  const app = createApp(ctx, { verifier: createFixtureVerifier(config) });
+  // Fixture identities for most suites; password mode exercises the real verifier and /v1/auth routes.
+  const app = createApp(ctx, config.AUTH_MODE === 'fixture' ? { verifier: createFixtureVerifier(config) } : {});
   return {
     ctx,
     app,

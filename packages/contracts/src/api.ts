@@ -404,3 +404,31 @@ export interface RoleplayStateDto {
   ended: boolean;
   session_evaluation_id: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// Accounts (AUTH_MODE=password): POST /v1/auth/register | login | refresh | logout | password
+// ---------------------------------------------------------------------------
+export interface AuthCredentialsRequest {
+  email: string;
+  password: string;
+}
+
+export interface AuthRefreshRequest {
+  refresh_token: string;
+}
+
+export interface AuthChangePasswordRequest {
+  current_password: string;
+  new_password: string;
+}
+
+/** Access token (short-lived JWT) plus a single-use rotating refresh token. */
+export interface AuthTokensDto {
+  access_token: string;
+  refresh_token: string;
+  /** Access token lifetime in seconds. */
+  expires_in: number;
+  token_type: 'Bearer';
+  user_id: string;
+  email: string;
+}

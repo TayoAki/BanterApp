@@ -1,19 +1,15 @@
-import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import aesjs from 'aes-js';
 import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
-import { env, supabaseConfigured } from './env';
 
 /**
  * Session storage: a random 256-bit key lives in the device keychain
- * (SecureStore); the encrypted session lives in AsyncStorage. This avoids
- * the platform size limits on keychain items while keeping the session
- * unreadable without the device's secure storage. Pattern from the Expo
- * Supabase guide.
+ * (SecureStore); the AES-CTR encrypted value lives in AsyncStorage. This
+ * avoids the platform size limits on keychain items while keeping the
+ * session unreadable without the device's secure storage.
  */
-class LargeSecureStore {
+export class LargeSecureStore {
   private async encrypt(key: string, value: string): Promise<string> {
     const encryptionKey = Crypto.getRandomBytes(32);
     const cipher = new aesjs.ModeOfOperation.ctr(encryptionKey, new aesjs.Counter(1));
@@ -50,19 +46,4 @@ class LargeSecureStore {
   }
 }
 
-let client: SupabaseClient | null = null;
-
-export function getSupabase(): SupabaseClient | null {
-  if (!supabaseConfigured) return null;
-  if (!client) {
-    client = createClient(env.supabaseUrl, env.supabasePublishableKey, {
-      auth: {
-        storage: new LargeSecureStore(),
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: false,
-      },
-    });
-  }
-  return client;
-}
+export const secureStore = new LargeSecureStore();

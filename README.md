@@ -9,17 +9,29 @@ fact-preserving rewrite, hears it in an AI voice, and records a guided retry. Bu
 
 See `PLAN.md` for per-feature status and evidence. In short: the contracts engine, content package,
 database schema, API, worker, provider adapters and the full mobile app are implemented and typecheck;
-the offline and database-backed test suites pass; both native Hermes bundles export. Not yet done:
-physical-device runs, live provider calls, store sandbox purchases, and Supabase project provisioning,
-each of which needs owner-held credentials or devices (listed in `PLAN.md`).
+the offline and database-backed test suites pass; both native Hermes bundles export. The server is
+deployed on Railway (Postgres + private bucket + `api` and `worker` services from `apps/server/Dockerfile`).
+Not yet done: live model calls (the owner must add rotated OpenRouter and Gemini keys as Railway variables),
+physical-device runs, and store sandbox purchases (listed with exact blockers in `PLAN.md`).
+
+## Stack
+
+| Concern | Choice |
+|---|---|
+| Accounts | Email + password served by the API (`AUTH_MODE=password`): scrypt hashes, HS256 access tokens, rotating refresh tokens, lockout. Supabase Auth remains selectable. |
+| Database | PostgreSQL (Railway Postgres). Migrations in `supabase/migrations` run on any plain Postgres. |
+| Audio storage | Any S3-compatible private bucket (Railway Buckets) via presigned single-object URLs. |
+| Text models | OpenRouter (chat completions with strict JSON schema) for evaluation, rewrite, verifier, roleplay. OpenAI Responses API selectable. |
+| Audio models | Gemini for transcription (`gemini-3.5-transcribe`) and speech (`gemini-3.1-flash-tts-preview`, PCM wrapped as WAV). OpenAI audio selectable. |
+| Billing | RevenueCat (sandbox first), off until configured. |
 
 ## Repository
 
 - `apps/mobile` Expo SDK 57 app (development build required: expo-audio, notifications, purchases)
-- `apps/server` Hono API + durable Postgres-queue worker, OpenAI and RevenueCat adapters, fixture adapters for dev/test
+- `apps/server` Hono API + durable Postgres-queue worker, adapters (OpenRouter/OpenAI text, Gemini/OpenAI audio, S3/Supabase/local storage, RevenueCat), fixture adapters for dev/test, `Dockerfile` for Railway
 - `packages/contracts` shared schemas/validators/totals/DTOs
 - `packages/content` reviewed content loader and publication manifests
-- `supabase/migrations` schema, functions, RLS
+- `supabase/migrations` schema, functions, RLS (applied by the server on start under an advisory lock)
 - `tests` cross-cutting checks
 - `handoff` the original specification packet (do not edit)
 
@@ -27,12 +39,12 @@ each of which needs owner-held credentials or devices (listed in `PLAN.md`).
 
 ```bash
 pnpm install
-# Postgres 15+ (Supabase local stack or plain Postgres)
-export DATABASE_URL=postgres://postgres@127.0.0.1:5432/marshmemos
+# Postgres 15+ (plain Postgres is fine)
 cat > apps/server/.env <<'ENV'
 APP_ENV=development
 DATABASE_URL=postgres://postgres@127.0.0.1:5432/marshmemos
-AUTH_MODE=fixture
+AUTH_MODE=password
+AUTH_JWT_SECRET=<32+ random characters, local only>
 STORAGE_MODE=local
 LOCAL_STORAGE_DIR=/tmp/marshmemos-storage
 PROVIDER_MODE=fixture
@@ -41,20 +53,28 @@ PUBLIC_API_BASE_URL=http://<your-lan-ip>:8787
 ENV
 pnpm server:api        # applies migrations, seeds content versions, serves /v1 on :8787
 pnpm server:worker     # in another terminal
-# apps/mobile/.env: EXPO_PUBLIC_API_BASE_URL=http://<your-lan-ip>:8787 (leave Supabase vars empty for development sign-in)
+# apps/mobile/.env: EXPO_PUBLIC_API_BASE_URL=http://<your-lan-ip>:8787 (EXPO_PUBLIC_AUTH_MODE=password by default)
 cd apps/mobile && npx expo run:ios   # or run:android; then `pnpm mobile`
 ```
 
-With real services: set `AUTH_MODE=supabase`, `STORAGE_MODE=supabase`, `PROVIDER_MODE=openai`,
-`CONTENT_MANIFEST=production` plus the secrets named in `.env.example`, apply
-`supabase/migrations` to the project, and configure RevenueCat per `handoff/docs/08-service-setup.md`.
+With live models locally: `PROVIDER_MODE=live`, `TEXT_AI_API_KEY=<OpenRouter key>`, `AUDIO_AI_API_KEY=<Gemini key>`
+in `apps/server/.env` (never in the repo or a chat). Model IDs are configuration (`.env.example`).
+
+## Railway
+
+The Railway project `marshmemos` holds `Postgres`, the bucket `practice-audio`, and the services `api` and
+`worker`, both built from `apps/server/Dockerfile` with the repository root as build context (the worker
+overrides the start command with `node dist/worker.js`). Service variables reference
+`${{Postgres.DATABASE_URL}}`, `${{practice-audio.*}}` and the shared `AUTH_JWT_SECRET`; the owner sets
+`TEXT_AI_API_KEY` and `AUDIO_AI_API_KEY`. `docs/operations.md` has the runbook.
 
 ## Tests
 
 ```bash
 pnpm typecheck
-pnpm test                                        # contracts, content, server unit, mobile logic, cross-cutting
-TEST_DATABASE_URL=postgres://... pnpm test:db     # schema, RLS, quota, jobs, end-to-end API journey with fixture providers
+pnpm test                                        # contracts, content, server unit (incl. adapter request shaping), mobile logic, cross-cutting
+TEST_DATABASE_URL=postgres://... pnpm test:db     # schema, RLS, quota, jobs, password accounts, end-to-end API journey with fixture providers
 pnpm content:validate
 python3 handoff/scripts/validate_handoff.py
+docker build -f apps/server/Dockerfile .          # the Railway image
 ```

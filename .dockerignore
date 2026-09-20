@@ -1,0 +1,16 @@
+# Docker build context for apps/server/Dockerfile (context = repository root).
+node_modules
+**/node_modules
+**/dist
+**/.expo
+apps/mobile/*
+!apps/mobile/package.json
+handoff
+docs
+tests/src
+.git
+.github
+**/.env
+**/.env.*
+!**/.env.example
+*.log
