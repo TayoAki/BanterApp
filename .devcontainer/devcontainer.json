@@ -1,0 +1,17 @@
+{
+  "name": "marshmemos",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:22",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "npm install -g pnpm@10.33.0 eas-cli && pnpm install",
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode", "expo.vscode-expo-tools"]
+    }
+  },
+  "forwardPorts": [8081, 8787],
+  "remoteEnv": {
+    "EXPO_NO_TELEMETRY": "1"
+  }
+}
