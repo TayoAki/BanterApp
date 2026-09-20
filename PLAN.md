@@ -131,6 +131,14 @@ text models, Gemini for speech. What changed and what was observed:
   `TEXT_AI_PROVIDER=openrouter`, `AUDIO_AI_PROVIDER=gemini`, `CONTENT_MANIFEST=production`, `BILLING_PROVIDER=none`;
   `api` also has `PUBLIC_API_BASE_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}`.
 
+**First live start (observed 2026-09-20, after the owner added the three shared secrets):** the worker booted with
+`has_text_key/has_audio_key/has_jwt_secret = true`, applied the local auth stub and all four migrations to Railway
+Postgres (`applied 4 migration(s)`) and logged `worker started`; the API started seconds later, found the schema up
+to date (advisory lock held by the worker's migration run) and logged `api listening`; its `/healthz` check passed.
+Railway injects `PORT=8080` while the generated domain targets 8787, so `PORT=8787` was pinned on the `api` service to
+match. No model call has happened yet: the first sign-up, recording and evaluation from a device will produce the
+first live transcription/evaluation/rewrite/speech calls, to be recorded here with the observed model IDs.
+
 **Exact blockers before the services start** (the config guard refuses to boot without them, by design):
 
 1. Three secrets, all in one place: Railway → project `marshmemos` → Settings → **Shared Variables** → environment
@@ -198,6 +206,6 @@ text models, Gemini for speech. What changed and what was observed:
 
 - Internal build: **not compiled here** (source ready; `expo export` bundles succeed).
 - Pilot distribution: not started.
-- Public deployment: Railway project provisioned; services build from the branch once connected and start once the owner sets the shared signing secret and the rotated model keys (see Railway stack above).
+- Public deployment: Railway `api` and `worker` are running from the branch (see Railway stack above); no store or public app distribution yet.
 - Store submission: not started (explicitly out of scope for this request).
 - Store approval: n/a.
