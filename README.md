@@ -53,7 +53,7 @@ PUBLIC_API_BASE_URL=http://<your-lan-ip>:8787
 ENV
 pnpm server:api        # applies migrations, seeds content versions, serves /v1 on :8787
 pnpm server:worker     # in another terminal
-# apps/mobile/.env: EXPO_PUBLIC_API_BASE_URL=http://<your-lan-ip>:8787 (EXPO_PUBLIC_AUTH_MODE=password by default)
+# apps/mobile/.env: EXPO_PUBLIC_API_BASE_URL=http://<your-lan-ip>:8787 overrides the Railway URL in app.json for LAN development
 cd apps/mobile && npx expo run:ios   # or run:android; then `pnpm mobile`
 ```
 
@@ -65,8 +65,10 @@ in `apps/server/.env` (never in the repo or a chat). Model IDs are configuration
 The Railway project `marshmemos` holds `Postgres`, the bucket `practice-audio`, and the services `api` and
 `worker`, both built from `apps/server/Dockerfile` with the repository root as build context (the worker
 overrides the start command with `node dist/worker.js`). Service variables reference
-`${{Postgres.DATABASE_URL}}`, `${{practice-audio.*}}` and the shared `AUTH_JWT_SECRET`; the owner sets
-`TEXT_AI_API_KEY` and `AUDIO_AI_API_KEY`. `docs/operations.md` has the runbook.
+`${{Postgres.DATABASE_URL}}`, `${{practice-audio.*}}` and three shared secrets (`AUTH_JWT_SECRET`,
+`TEXT_AI_API_KEY`, `AUDIO_AI_API_KEY`) that the owner creates once under Project Settings → Shared Variables.
+The mobile app points at `https://api-production-092a.up.railway.app` through `app.json` `extra.apiBaseUrl`.
+`docs/operations.md` has the runbook.
 
 ## Tests
 

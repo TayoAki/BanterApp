@@ -9,8 +9,9 @@
   reservations/leases/media every minute). Both run migrations on start under an advisory lock, so
   simultaneous starts are safe.
 - Configuration is environment-only (`.env.example`). Railway variables reference `${{Postgres.DATABASE_URL}}`,
-  `${{practice-audio.BUCKET|ACCESS_KEY_ID|SECRET_ACCESS_KEY|REGION|ENDPOINT}}` and the shared
-  `AUTH_JWT_SECRET`; `TEXT_AI_API_KEY` (OpenRouter) and `AUDIO_AI_API_KEY` (Gemini) are set by the owner.
+  `${{practice-audio.BUCKET|ACCESS_KEY_ID|SECRET_ACCESS_KEY|REGION|ENDPOINT}}` and the three shared secrets
+  `AUTH_JWT_SECRET`, `TEXT_AI_API_KEY` (OpenRouter) and `AUDIO_AI_API_KEY` (Gemini), which live in
+  Project Settings → Shared Variables (production) and are sealed there.
   Production refuses fixture providers, fixture auth, local storage, the development content manifest and
   demo entitlements at startup, and refuses to start without the keys for the selected modes.
 - Accounts: `POST /v1/auth/register|login|refresh|logout|password`. Access tokens are HS256 JWTs signed with

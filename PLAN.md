@@ -133,18 +133,19 @@ text models, Gemini for speech. What changed and what was observed:
 
 **Exact blockers before the services start** (the config guard refuses to boot without them, by design):
 
-1. Shared variable `AUTH_JWT_SECRET` (Project Settings → Shared Variables → production): 64 random characters.
-   Generating a credential from this session was declined by the tool policy, so the owner creates it; both services
-   already reference `${{shared.AUTH_JWT_SECRET}}`. Seal it after creating it.
-2. `TEXT_AI_API_KEY` (OpenRouter) and `AUDIO_AI_API_KEY` (Gemini) on `api` and `worker`. The OpenRouter and Gemini keys
-   that were pasted into the build chat must be **rotated first** and the new values entered only in Railway.
-3. Connect both services to GitHub `TayoAki/BanterApp`, branch `claude/sweet-turing-lvns8k` (done from this session if
-   the GitHub authorization allows it; otherwise Service → Settings → Source). The first deploy applies the migrations.
-4. Record the first live call per model (transcription, evaluation, rewrite, verifier, speech) here before any
+1. Three secrets, all in one place: Railway → project `marshmemos` → Settings → **Shared Variables** → environment
+   `production`: `AUTH_JWT_SECRET` (64 random characters), `TEXT_AI_API_KEY` (a **rotated** OpenRouter key) and
+   `AUDIO_AI_API_KEY` (a **rotated** Gemini key). Not on the Postgres service. Both `api` and `worker` already read
+   them through `${{shared.AUTH_JWT_SECRET}}`, `${{shared.TEXT_AI_API_KEY}}` and `${{shared.AUDIO_AI_API_KEY}}`,
+   so nothing else needs editing; seal the three after saving. Generating a credential from this session was
+   declined by the tool policy, so the owner creates them. The keys pasted into the build chat must not be reused.
+2. Redeploy `api` and `worker` (or push to the branch). The first successful start applies the migrations and
+   `GET https://api-production-092a.up.railway.app/healthz` returns `ok: true`.
+3. Record the first live call per model (transcription, evaluation, rewrite, verifier, speech) here before any
    provider is called "connected"; adjust `TRANSCRIPTION_MODEL`/`TTS_MODEL`/`AUDIO_AI_TRANSCRIBE_API` if a model ID
    or surface is rejected (the deploy log names the failing variable or provider status).
-5. Mobile: set `EXPO_PUBLIC_API_BASE_URL=https://api-production-092a.up.railway.app` in `apps/mobile/.env`
-   for the development build.
+4. Mobile: `apps/mobile/app.json` `extra.apiBaseUrl` already points at `https://api-production-092a.up.railway.app`
+   (`EXPO_PUBLIC_API_BASE_URL` in a local `.env` overrides it for LAN development).
 
 ## Slice status
 
@@ -180,8 +181,8 @@ text models, Gemini for speech. What changed and what was observed:
 
 ## Owner setup required before pilot
 
-1. Railway: create the shared `AUTH_JWT_SECRET`; set rotated `TEXT_AI_API_KEY` (OpenRouter) and `AUDIO_AI_API_KEY` (Gemini)
-   on `api` and `worker`; connect both services to the repository branch; confirm the first deploy's `/healthz`.
+1. Railway: create the shared variables `AUTH_JWT_SECRET`, `TEXT_AI_API_KEY` (rotated OpenRouter) and `AUDIO_AI_API_KEY`
+   (rotated Gemini) in the production environment; redeploy; confirm the first deploy's `/healthz`.
 2. Choose/confirm model IDs (`TRANSCRIPTION_MODEL`, `EVALUATION_MODEL`, `REWRITE_MODEL`, `VERIFIER_MODEL`, `ROLEPLAY_MODEL`,
    `TTS_MODEL`, `TTS_VOICE`) after running the calibration suite; confirm the OpenRouter route honors strict structured
    outputs for the chosen models (`require_parameters` refuses routes that do not).
